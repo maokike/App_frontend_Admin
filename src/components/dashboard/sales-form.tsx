@@ -1,0 +1,155 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { products } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { CreditCard, Landmark, PlusCircle } from "lucide-react";
+
+const formSchema = z.object({
+  productId: z.string().min(1, "Please select a product."),
+  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
+  paymentMethod: z.enum(["cash", "card"], { required_error: "Please select a payment method." }),
+});
+
+export function SalesForm() {
+  const [total, setTotal] = useState(0);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      productId: "",
+      quantity: 1,
+      paymentMethod: "card",
+    },
+  });
+
+  const { watch, getValues } = form;
+  const watchedProductId = watch("productId");
+  const watchedQuantity = watch("quantity");
+
+  useEffect(() => {
+    const { productId, quantity } = getValues();
+    if (productId && quantity > 0) {
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        setTotal(product.price * quantity);
+      }
+    } else {
+      setTotal(0);
+    }
+  }, [watchedProductId, watchedQuantity, getValues]);
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    toast({
+      title: "Sale Recorded!",
+      description: `Successfully recorded sale of ${values.quantity} x ${products.find(p => p.id === values.productId)?.name}.`,
+    });
+    form.reset();
+    setTotal(0);
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-8 items-end">
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="productId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a product" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {products.map(product => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} - ${product.price.toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quantity</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} min={1} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel>Payment Method</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex flex-col space-y-1"
+                  >
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="card" />
+                      </FormControl>
+                      <FormLabel className="font-normal flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-muted-foreground" /> Card
+                      </FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="cash" />
+                      </FormControl>
+                      <FormLabel className="font-normal flex items-center gap-2">
+                        <Landmark className="w-4 h-4 text-muted-foreground" /> Cash
+                      </FormLabel>
+                    </FormItem>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex flex-col gap-4">
+            <div className="bg-muted rounded-lg p-6 flex flex-col items-center justify-center space-y-2">
+                <h3 className="text-lg font-medium text-muted-foreground">Total Amount</h3>
+                <p className="text-5xl font-bold font-headline text-primary">
+                    ${total.toFixed(2)}
+                </p>
+            </div>
+            <Button type="submit" size="lg" className="w-full">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Record Sale
+            </Button>
+        </div>
+
+      </form>
+    </Form>
+  );
+}
