@@ -40,13 +40,12 @@ export function SalesForm() {
     name: "products",
   });
 
-  const { watch, getValues } = form;
-  const watchedProducts = watch("products");
+  const watchedProducts = form.watch("products");
 
   useEffect(() => {
-    const { products: saleProducts } = getValues();
-    let currentTotal = 0;
-    if (saleProducts) {
+    const subscription = form.watch((value) => {
+      const saleProducts = value.products || [];
+      let currentTotal = 0;
       for (const saleProduct of saleProducts) {
         if (saleProduct.productId && saleProduct.quantity > 0) {
           const product = products.find(p => p.id === saleProduct.productId);
@@ -55,9 +54,10 @@ export function SalesForm() {
           }
         }
       }
-    }
-    setTotal(currentTotal);
-  }, [watchedProducts, getValues]);
+      setTotal(currentTotal);
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const productCount = values.products.reduce((acc, p) => acc + p.quantity, 0);
