@@ -18,7 +18,7 @@ export function LoginForm() {
     // Simulate API call
     setTimeout(() => {
       // On success, redirect to dashboard
-      router.push('/');
+      router.push('/dashboard');
     }, 1000);
   };
 
