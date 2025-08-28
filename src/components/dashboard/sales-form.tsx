@@ -43,7 +43,7 @@ export function SalesForm() {
   const watchedProducts = form.watch("products");
 
   useEffect(() => {
-    const subscription = form.watch((value) => {
+    const subscription = form.watch((value, { name, type }) => {
       const saleProducts = value.products || [];
       let currentTotal = 0;
       for (const saleProduct of saleProducts) {
@@ -57,7 +57,7 @@ export function SalesForm() {
       setTotal(currentTotal);
     });
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, [form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const productCount = values.products.reduce((acc, p) => acc + p.quantity, 0);
@@ -77,7 +77,7 @@ export function SalesForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-8 items-start">
         <div className="space-y-6">
           <div className="space-y-4">
-            <FormLabel>Products</FormLabel>
+            <FormLabel className="text-base font-bold">Products</FormLabel>
             {fields.map((field, index) => (
               <div key={field.id} className="grid grid-cols-[1fr_auto_auto] items-end gap-2 p-4 border rounded-lg bg-muted/30">
                 <FormField
