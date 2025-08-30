@@ -3,15 +3,40 @@
 import { useState } from 'react';
 import type { UserRole } from '@/lib/types';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from '@/components/ui/sidebar';
-import { DollarSign, LayoutDashboard } from 'lucide-react';
+import { DollarSign, LayoutDashboard, UserPlus, PackagePlus, ClipboardList, Warehouse } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
 import { LocalDashboard } from '@/components/dashboard/local-dashboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import NewCustomerPage from '../new-customer/page';
+import NewProductPage from '../new-product/page';
+import DailySummaryPage from '../daily-summary/page';
+import InventoryPage from '../inventory/page';
+
 
 export default function DashboardPage() {
   const [role, setRole] = useState<UserRole>('local');
+  const pathname = usePathname();
+
+  const renderContent = () => {
+    switch (pathname) {
+      case '/new-customer':
+        return <NewCustomerPage />;
+      case '/new-product':
+        return <NewProductPage />;
+      case '/daily-summary':
+        return <DailySummaryPage />;
+      case '/inventory':
+        return <InventoryPage />;
+      case '/login':
+        return role === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
+      default:
+        return role === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
+    }
+  }
 
   return (
     <SidebarProvider>
@@ -29,10 +54,54 @@ export default function DashboardPage() {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Dashboard" isActive>
-                <LayoutDashboard />
-                <span>Dashboard</span>
-              </SidebarMenuButton>
+              <Link href="/login" legacyBehavior passHref>
+                <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === '/login'}>
+                  <a>
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </a>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/new-customer" legacyBehavior passHref>
+                <SidebarMenuButton asChild tooltip="Nuevo Cliente" isActive={pathname === '/new-customer'}>
+                  <a>
+                    <UserPlus />
+                    <span>Nuevo Cliente</span>
+                  </a>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <Link href="/new-product" legacyBehavior passHref>
+                    <SidebarMenuButton asChild tooltip="Nuevo Producto" isActive={pathname === '/new-product'}>
+                        <a>
+                            <PackagePlus />
+                            <span>Nuevo Producto</span>
+                        </a>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <Link href="/daily-summary" legacyBehavior passHref>
+                    <SidebarMenuButton asChild tooltip="Resumen Diario" isActive={pathname === '/daily-summary'}>
+                        <a>
+                            <ClipboardList />
+                            <span>Resumen Diario</span>
+                        </a>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <Link href="/inventory" legacyBehavior passHref>
+                    <SidebarMenuButton asChild tooltip="Inventario" isActive={pathname === '/inventory'}>
+                        <a>
+                            <Warehouse />
+                            <span>Inventario</span>
+                        </a>
+                    </SidebarMenuButton>
+                </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
@@ -57,7 +126,7 @@ export default function DashboardPage() {
           <DashboardHeader currentRole={role} onRoleChange={setRole} />
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
-          {role === 'admin' ? <AdminDashboard /> : <LocalDashboard />}
+          {renderContent()}
         </main>
       </SidebarInset>
     </SidebarProvider>
