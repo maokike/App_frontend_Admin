@@ -1,5 +1,6 @@
 import { LoginForm } from "@/components/auth/login-form";
 import { DollarSign } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -12,6 +13,12 @@ export default function LoginPage() {
         <p className="text-muted-foreground">Sign in to access your dashboard</p>
       </div>
       <LoginForm />
+      <p className="mt-4 text-sm text-muted-foreground">
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="font-semibold text-primary hover:underline">
+          Sign Up
+        </Link>
+      </p>
     </main>
   );
 }
