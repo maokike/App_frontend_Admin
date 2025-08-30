@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link, { type LinkProps } from "next/link"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
@@ -533,27 +534,34 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
-const SidebarMenuButton = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentProps<"button"> & {
-    asChild?: boolean
-    isActive?: boolean
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>
-  } & VariantProps<typeof sidebarMenuButtonVariants>
->(
-  (
+type SidebarMenuButtonAs = "button" | "a" | typeof Link | React.ElementType
+
+const SidebarMenuButton = React.forwardRef(
+  <T extends SidebarMenuButtonAs = "button">(
     {
-      asChild = false,
+      as,
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
       ...props
-    },
-    ref
+    }: React.ComponentProps<T> & {
+      as?: T
+      isActive?: boolean
+      tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    } & VariantProps<typeof sidebarMenuButtonVariants>,
+    ref: React.Ref<
+      T extends "a"
+        ? HTMLAnchorElement
+        : T extends "button"
+          ? HTMLButtonElement
+          : T extends typeof Link
+            ? React.ElementRef<typeof Link>
+            : never
+    >
   ) => {
-    const Comp = asChild ? Slot : "button"
+    const Comp = (as || "button") as React.ElementType
     const { isMobile, state } = useSidebar()
 
     const button = (

@@ -54,54 +54,34 @@ export default function DashboardPage() {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/login" legacyBehavior passHref>
-                <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === '/login'}>
-                  <a>
-                    <LayoutDashboard />
-                    <span>Dashboard</span>
-                  </a>
+              <SidebarMenuButton as={Link} href="/login" tooltip="Dashboard" isActive={pathname === '/login'}>
+                  <LayoutDashboard />
+                  <span>Dashboard</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton as={Link} href="/new-customer" tooltip="Nuevo Cliente" isActive={pathname === '/new-customer'}>
+                  <UserPlus />
+                  <span>Nuevo Cliente</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton as={Link} href="/new-product" tooltip="Nuevo Producto" isActive={pathname === '/new-product'}>
+                    <PackagePlus />
+                    <span>Nuevo Producto</span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/new-customer" legacyBehavior passHref>
-                <SidebarMenuButton asChild tooltip="Nuevo Cliente" isActive={pathname === '/new-customer'}>
-                  <a>
-                    <UserPlus />
-                    <span>Nuevo Cliente</span>
-                  </a>
+                <SidebarMenuButton as={Link} href="/daily-summary" tooltip="Resumen Diario" isActive={pathname === '/daily-summary'}>
+                    <ClipboardList />
+                    <span>Resumen Diario</span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/new-product" legacyBehavior passHref>
-                    <SidebarMenuButton asChild tooltip="Nuevo Producto" isActive={pathname === '/new-product'}>
-                        <a>
-                            <PackagePlus />
-                            <span>Nuevo Producto</span>
-                        </a>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <Link href="/daily-summary" legacyBehavior passHref>
-                    <SidebarMenuButton asChild tooltip="Resumen Diario" isActive={pathname === '/daily-summary'}>
-                        <a>
-                            <ClipboardList />
-                            <span>Resumen Diario</span>
-                        </a>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <Link href="/inventory" legacyBehavior passHref>
-                    <SidebarMenuButton asChild tooltip="Inventario" isActive={pathname === '/inventory'}>
-                        <a>
-                            <Warehouse />
-                            <span>Inventario</span>
-                        </a>
-                    </SidebarMenuButton>
-                </Link>
+                <SidebarMenuButton as={Link} href="/inventory" tooltip="Inventario" isActive={pathname === '/inventory'}>
+                    <Warehouse />
+                    <span>Inventario</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
