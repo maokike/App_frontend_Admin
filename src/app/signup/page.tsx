@@ -1,5 +1,6 @@
 import { SignupForm } from "@/components/auth/signup-form";
-import { DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function SignupPage() {
@@ -19,6 +20,12 @@ export default function SignupPage() {
             Login
             </Link>
         </p>
+        <Button variant="link" className="mt-8" asChild>
+            <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Login
+            </Link>
+        </Button>
     </main>
   );
 }
