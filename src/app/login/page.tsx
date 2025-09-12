@@ -27,7 +27,7 @@ export default function DashboardPage() {
       case '/new-customer':
         return <NewCustomerPage />;
       case '/new-product':
-        return <NewProductPage />;
+        return <NewProductPage role={role} />;
       case '/daily-summary':
         return <DailySummaryPage />;
       case '/inventory':

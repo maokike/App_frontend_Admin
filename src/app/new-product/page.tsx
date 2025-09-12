@@ -5,8 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
+import type { UserRole } from "@/lib/types";
 
-export default function NewProductPage() {
+interface NewProductPageProps {
+    role: UserRole;
+}
+
+export default function NewProductPage({ role }: NewProductPageProps) {
     return (
         <div className="grid gap-8">
              <div className="flex justify-start">
@@ -26,22 +31,24 @@ export default function NewProductPage() {
                     <NewProductForm />
                 </CardContent>
             </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Editar Productos Existentes</CardTitle>
-                    <CardDescription>
-                        Para editar o eliminar un producto, vaya a la vista de inventario.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild>
-                        <Link href="/inventory">
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Ir al Inventario
-                        </Link>
-                    </Button>
-                </CardContent>
-            </Card>
+            {role === 'admin' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Editar Productos Existentes</CardTitle>
+                        <CardDescription>
+                            Para editar o eliminar un producto, vaya a la vista de inventario.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild>
+                            <Link href="/inventory">
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Ir al Inventario
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }
