@@ -1,4 +1,4 @@
-import type { Product, Sale } from './types';
+import type { Product, Sale, User } from './types';
 
 export const products: Product[] = [
   { id: 'prod_1', name: 'Artisan Bread', price: 5.50 },
@@ -33,3 +33,10 @@ export const monthlySales = sales.reduce((acc, sale) => {
   }
   return acc;
 }, [] as { month: string; total: number }[]);
+
+
+export const localUsers: User[] = [
+    { id: 'user_1', name: 'John Doe', role: 'local' },
+    { id: 'user_2', name: 'Jane Smith', role: 'local' },
+    { id: 'user_3', name: 'Peter Jones', role: 'local' },
+];

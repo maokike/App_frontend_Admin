@@ -8,10 +8,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Store } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { localUsers } from "@/lib/data";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres."),
+  userId: z.string().min(1, "Por favor, asigna un usuario."),
 });
 
 export function NewLocalForm() {
@@ -22,13 +25,15 @@ export function NewLocalForm() {
     defaultValues: {
       name: "",
       address: "",
+      userId: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    const selectedUser = localUsers.find(u => u.id === values.userId);
     toast({
       title: "Local Creado",
-      description: `El local ${values.name} ha sido añadido.`,
+      description: `El local ${values.name} ha sido añadido y asignado a ${selectedUser?.name}.`,
     });
     form.reset();
   }
@@ -58,6 +63,30 @@ export function NewLocalForm() {
               <FormControl>
                 <Input placeholder="Av. Siempre Viva 123" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="userId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Asignar Usuario (Local)</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un usuario" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {localUsers.map(user => (
+                            <SelectItem key={user.id} value={user.id}>
+                                {user.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
               <FormMessage />
             </FormItem>
           )}
