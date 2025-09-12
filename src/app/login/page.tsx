@@ -86,12 +86,14 @@ export default function DashboardPage() {
                     <span>Inventario</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/new-local" tooltip="Gestion Locales" isActive={pathname === '/new-local'}>
-                    <Store />
-                    <span>Gestion Locales</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            {role === 'admin' && (
+              <SidebarMenuItem>
+                  <SidebarMenuButton as={Link} href="/new-local" tooltip="Gestion Locales" isActive={pathname === '/new-local'}>
+                      <Store />
+                      <span>Gestion Locales</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:items-center">
