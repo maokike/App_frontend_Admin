@@ -8,7 +8,7 @@ export default function NewLocalPage() {
         <div className="grid gap-8">
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Ingresar Nuevo Local</CardTitle>
+                    <CardTitle className="font-headline">Gestion de Locales</CardTitle>
                     <CardDescription>Añada un nuevo local al sistema.</CardDescription>
                 </CardHeader>
                 <CardContent>

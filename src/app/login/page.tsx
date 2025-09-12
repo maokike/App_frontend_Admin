@@ -87,9 +87,9 @@ export default function DashboardPage() {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/new-local" tooltip="Nuevo Local" isActive={pathname === '/new-local'}>
+                <SidebarMenuButton as={Link} href="/new-local" tooltip="Gestion Locales" isActive={pathname === '/new-local'}>
                     <Store />
-                    <span>Nuevo Local</span>
+                    <span>Gestion Locales</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
