@@ -1,15 +1,63 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { monthlySales, sales } from "@/lib/data";
 import { CircleDollarSign, ShoppingCart, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { collection, getDocs, onSnapshot, query, where, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { Sale } from "@/lib/types";
+
+interface MonthlySale {
+  month: string;
+  total: number;
+}
 
 export function AdminDashboard() {
-  const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalSales = sales.length;
-  const newCustomers = 45;
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalSales, setTotalSales] = useState(0);
+  const [newCustomers, setNewCustomers] = useState(0); // Assuming this is calculated elsewhere for now
+  const [monthlySales, setMonthlySales] = useState<MonthlySale[]>([]);
+
+  useEffect(() => {
+    const salesCol = collection(db, "sales");
+    const unsubscribe = onSnapshot(salesCol, (snapshot) => {
+      const salesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Sale));
+      
+      const revenue = salesData.reduce((sum, sale) => sum + sale.total, 0);
+      setTotalRevenue(revenue);
+      setTotalSales(salesData.length);
+
+      const monthly = salesData.reduce((acc, sale) => {
+          const date = (sale.date as Timestamp).toDate();
+          const month = date.toLocaleString('default', { month: 'short' });
+          const existing = acc.find(d => d.month === month);
+          if (existing) {
+            existing.total += sale.total;
+          } else {
+            acc.push({ month, total: sale.total });
+          }
+          return acc;
+        }, [] as MonthlySale[]);
+      
+      // Ensure all months are present for the chart
+      const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const completeMonthlySales = allMonths.map(monthName => {
+        const found = monthly.find(m => m.month === monthName);
+        return found || { month: monthName, total: 0 };
+      });
+      
+      setMonthlySales(completeMonthlySales);
+    });
+
+    // Fetch new customers (placeholder)
+    const usersCol = collection(db, "users");
+    const q = query(usersCol, where("role", "==", "local"));
+    getDocs(q).then(snapshot => setNewCustomers(snapshot.size));
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="grid gap-8">
@@ -21,7 +69,7 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <p className="text-xs text-muted-foreground">Across all locals</p>
           </CardContent>
         </Card>
         <Card>
@@ -31,17 +79,17 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{totalSales}</div>
-            <p className="text-xs text-muted-foreground">+180.1% from last month</p>
+            <p className="text-xs text-muted-foreground">Total transactions</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Customers</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{newCustomers}</div>
-            <p className="text-xs text-muted-foreground">+19% from last month</p>
+            <p className="text-xs text-muted-foreground">Local user accounts</p>
           </CardContent>
         </Card>
       </div>

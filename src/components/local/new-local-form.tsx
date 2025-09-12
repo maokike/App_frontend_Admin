@@ -6,13 +6,14 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { Store, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { localUsers } from "@/lib/data";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import type { Local } from "@/lib/types";
+import type { Local, User } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
@@ -28,8 +29,18 @@ interface NewLocalFormProps {
 }
 
 export function NewLocalForm({ onLocalAdded }: NewLocalFormProps) {
-  const { toast } = useToast();
   const router = useRouter();
+  const [localUsers, setLocalUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+        const q = query(collection(db, "users"), where("role", "==", "local"));
+        const querySnapshot = await getDocs(q);
+        const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setLocalUsers(users);
+    }
+    fetchUsers();
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,13 +53,9 @@ export function NewLocalForm({ onLocalAdded }: NewLocalFormProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const selectedUser = localUsers.find(u => u.id === values.userId);
     onLocalAdded(values);
-    toast({
-      title: "Local Creado",
-      description: `El local ${values.name} ha sido añadido y asignado a ${selectedUser?.name}.`,
-    });
     form.reset();
+    router.push('/login');
   }
 
   return (
@@ -108,7 +115,7 @@ export function NewLocalForm({ onLocalAdded }: NewLocalFormProps) {
                         </FormControl>
                         <SelectContent>
                             {localUsers.map(user => (
-                                <SelectItem key={user.id} value={user.id}>
+                                <SelectItem key={user.id} value={user.id!}>
                                     {user.name}
                                 </SelectItem>
                             ))}

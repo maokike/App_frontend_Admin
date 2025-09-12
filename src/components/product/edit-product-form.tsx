@@ -25,6 +25,7 @@ import {
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del producto debe tener al menos 2 caracteres."),
   price: z.coerce.number().positive("El precio debe ser un número positivo."),
+  stock: z.coerce.number().int().min(0, "El stock no puede ser negativo."),
   description: z.string().optional(),
 });
 
@@ -42,6 +43,7 @@ export function EditProductForm({ product, onSave, onDelete }: EditProductFormPr
     defaultValues: {
       name: product.name,
       price: product.price,
+      stock: product.stock || 0,
       description: product.description || "",
     },
   });
@@ -80,19 +82,34 @@ export function EditProductForm({ product, onSave, onDelete }: EditProductFormPr
             </FormItem>
           )}
         />
-        <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Precio</FormLabel>
-                <FormControl>
-                    <Input type="number" step="0.01" placeholder="5.50" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Precio</FormLabel>
+                    <FormControl>
+                        <Input type="number" step="0.01" placeholder="5.50" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            <FormField
+                control={form.control}
+                name="stock"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Stock</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="100" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+        </div>
         <FormField
           control={form.control}
           name="description"

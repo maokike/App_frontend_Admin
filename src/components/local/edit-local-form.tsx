@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { localUsers } from "@/lib/data";
-import type { Local } from "@/lib/types";
+import type { Local, User } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
@@ -27,6 +29,17 @@ interface EditLocalFormProps {
 
 export function EditLocalForm({ local, onSave, onDelete }: EditLocalFormProps) {
   const { toast } = useToast();
+  const [localUsers, setLocalUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+        const q = query(collection(db, "users"), where("role", "==", "local"));
+        const querySnapshot = await getDocs(q);
+        const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setLocalUsers(users);
+    }
+    fetchUsers();
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,19 +54,10 @@ export function EditLocalForm({ local, onSave, onDelete }: EditLocalFormProps) {
   function onSubmit(values: z.infer<typeof formSchema>) {
     const updatedLocal = { ...local, ...values };
     onSave(updatedLocal);
-    toast({
-      title: "Local Actualizado",
-      description: `El local ${values.name} ha sido actualizado.`,
-    });
   }
 
   function handleDelete() {
     onDelete(local.id);
-     toast({
-        title: "Local Eliminado",
-        description: "El local ha sido eliminado correctamente.",
-        variant: "destructive",
-    });
   }
 
   return (
@@ -112,7 +116,7 @@ export function EditLocalForm({ local, onSave, onDelete }: EditLocalFormProps) {
                     </FormControl>
                     <SelectContent>
                         {localUsers.map(user => (
-                            <SelectItem key={user.id} value={user.id}>
+                            <SelectItem key={user.id} value={user.id!}>
                                 {user.name}
                             </SelectItem>
                         ))}

@@ -1,9 +1,13 @@
+import { Timestamp } from "firebase/firestore";
+
 export type UserRole = 'admin' | 'local';
 
 export type User = {
-  id: string;
+  id?: string;
+  uid?: string;
   name: string;
   role: UserRole;
+  email: string;
 };
 
 export type Product = {
@@ -11,6 +15,7 @@ export type Product = {
   name: string;
   price: number;
   description?: string;
+  stock?: number;
 };
 
 export type PaymentMethod = 'cash' | 'card';
@@ -21,7 +26,8 @@ export type Sale = {
   quantity: number;
   total: number;
   paymentMethod: PaymentMethod;
-  date: Date;
+  date: Timestamp | Date;
+  localId?: string;
 };
 
 export type Local = {

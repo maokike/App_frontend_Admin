@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PackagePlus } from "lucide-react";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del producto debe tener al menos 2 caracteres."),
@@ -30,12 +32,21 @@ export function NewProductForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: "Producto Creado",
-      description: `El producto ${values.name} ha sido añadido.`,
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await addDoc(collection(db, "products"), values);
+      toast({
+        title: "Producto Creado",
+        description: `El producto ${values.name} ha sido añadido.`,
+      });
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Hubo un problema al crear el producto.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (

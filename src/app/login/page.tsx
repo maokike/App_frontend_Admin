@@ -1,36 +1,90 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { UserRole } from '@/lib/types';
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from '@/components/ui/sidebar';
-import { DollarSign, LayoutDashboard, UserPlus, PackagePlus, ClipboardList, Warehouse, Store } from 'lucide-react';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { DollarSign, LayoutDashboard, UserPlus, PackagePlus, ClipboardList, Warehouse, Store, LogOut } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
 import { LocalDashboard } from '@/components/dashboard/local-dashboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import NewCustomerPage from '../new-customer/page';
 import NewProductPage from '../new-product/page';
 import DailySummaryPage from '../daily-summary/page';
 import InventoryPage from '../inventory/page';
 import NewLocalPage from '../new-local/page';
-import { locals } from '@/lib/data';
-
+import { useAuth } from '@/hooks/use-auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
-  const [role, setRole] = useState<UserRole>('local');
+  const { user, loading, role: authRole } = useAuth();
+  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
+  const router = useRouter();
   const pathname = usePathname();
-  // Simulate fetching the local's name. In a real app, this would come from auth/DB.
-  const localName = role === 'local' ? locals[0].name : undefined;
+  const [localName, setLocalName] = useState<string | undefined>(undefined);
+
+  const effectiveRole = authRole === 'admin' ? (simulatedRole || authRole) : authRole;
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    async function fetchLocalName() {
+        if (user && authRole === 'local') {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            if(userDoc.exists()) {
+                const userData = userDoc.data();
+                if(userData.localId) {
+                    const localDocRef = doc(db, 'locals', userData.localId);
+                    const localDoc = await getDoc(localDocRef);
+                    if(localDoc.exists()) {
+                        setLocalName(localDoc.data().name);
+                    }
+                }
+            }
+        } else if (authRole === 'admin' && simulatedRole === 'local') {
+            // For now, if admin simulates local, we don't have a specific local assigned.
+            // This could be enhanced later.
+            setLocalName("Simulated Local");
+        } else {
+            setLocalName(undefined);
+        }
+    }
+    fetchLocalName();
+  }, [user, authRole, simulatedRole]);
+  
+  if (loading || !user) {
+    return (
+       <div className="flex items-start min-h-screen">
+        <Skeleton className="hidden md:block h-screen w-[256px]" />
+        <div className="flex-1 p-8">
+            <Skeleton className="h-16 w-full mb-8" />
+            <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    )
+  }
+  
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/');
+  };
 
   const renderContent = () => {
     switch (pathname) {
       case '/new-customer':
         return <NewCustomerPage />;
       case '/new-product':
-        return <NewProductPage role={role} />;
+        return <NewProductPage role={effectiveRole as UserRole} />;
       case '/daily-summary':
         return <DailySummaryPage />;
       case '/inventory':
@@ -38,9 +92,9 @@ export default function DashboardPage() {
       case '/new-local':
         return <NewLocalPage />;
       case '/login':
-        return role === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
+        return effectiveRole === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
       default:
-        return role === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
+        return effectiveRole === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
     }
   }
 
@@ -89,7 +143,7 @@ export default function DashboardPage() {
                     <span>Inventario</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            {role === 'admin' && (
+            {authRole === 'admin' && (
               <SidebarMenuItem>
                   <SidebarMenuButton as={Link} href="/new-local" tooltip="Gestion Locales" isActive={pathname === '/new-local'}>
                       <Store />
@@ -100,29 +154,32 @@ export default function DashboardPage() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:items-center">
-            <div className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-sidebar-accent">
+            <div className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-sidebar-accent w-full">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src="https://picsum.photos/100" alt="User" data-ai-hint="user avatar" />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarImage src={`https://i.pravatar.cc/150?u=${user.uid}`} alt="User" data-ai-hint="user avatar" />
+                    <AvatarFallback>{user.name?.[0].toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                    <span className="font-semibold text-sm">Jane Doe</span>
-                    <span className="text-xs text-muted-foreground capitalize">{role}</span>
+                    <span className="font-semibold text-sm">{user.name}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{effectiveRole}</span>
                 </div>
+                <button onClick={handleLogout} className="ml-auto group-data-[collapsible=icon]:mx-auto">
+                    <LogOut className="h-5 w-5 text-muted-foreground hover:text-foreground"/>
+                </button>
             </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <main className="flex-1">
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
           <div className="md:hidden">
             <SidebarTrigger />
           </div>
-          <DashboardHeader currentRole={role} onRoleChange={setRole} localName={localName} />
+          <DashboardHeader currentRole={effectiveRole as UserRole} onRoleChange={setSimulatedRole} localName={localName} isAdmin={authRole === 'admin'} />
         </header>
-        <main className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {renderContent()}
-        </main>
-      </SidebarInset>
+        </div>
+      </main>
     </SidebarProvider>
   );
 }

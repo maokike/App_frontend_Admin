@@ -1,49 +1,54 @@
 "use client";
 
-import { products as initialProducts } from "@/lib/data";
+import React, { useState, useEffect } from "react";
+import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import type { Product } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { EditProductForm } from "@/components/product/edit-product-form";
 import { useRouter } from "next/navigation";
-
-interface ProductWithStock extends Product {
-    stockLevel: number;
-}
+import { Skeleton } from "../ui/skeleton";
 
 export function InventoryView() {
-    const [productsWithStock, setProductsWithStock] = useState<ProductWithStock[]>([]);
-    const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
-        // Generate stock levels only on the client side
-        const productsWithGeneratedStock = initialProducts.map(product => ({
-            ...product,
-            stockLevel: (Math.random() * 80) + 20
-        }));
-        setProductsWithStock(productsWithGeneratedStock);
+        const productsCollection = collection(db, "products");
+        const unsubscribe = onSnapshot(productsCollection, (snapshot) => {
+            const productList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+            setProducts(productList);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, []);
 
-    const handleProductUpdate = (updatedProduct: Product) => {
-        setProductsWithStock(prevProducts =>
-            prevProducts.map(p => p.id === updatedProduct.id ? { ...p, ...updatedProduct, stockLevel: p.stockLevel } : p)
-        );
+    const handleProductUpdate = async (updatedProduct: Product) => {
+        const productRef = doc(db, "products", updatedProduct.id);
+        await updateDoc(productRef, {
+            name: updatedProduct.name,
+            price: updatedProduct.price,
+            description: updatedProduct.description,
+            stock: updatedProduct.stock,
+        });
+        setSelectedProduct(null);
+        router.push('/login'); 
+    };
+
+    const handleProductDelete = async (productId: string) => {
+        const productRef = doc(db, "products", productId);
+        await deleteDoc(productRef);
         setSelectedProduct(null);
         router.push('/login');
     };
-
-    const handleProductDelete = (productId: string) => {
-        setProductsWithStock(prevProducts => prevProducts.filter(p => p.id !== productId));
-        setSelectedProduct(null);
-        router.push('/login');
-    };
-
 
     return (
         <div className="grid gap-8">
@@ -67,14 +72,26 @@ export function InventoryView() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {productsWithStock.length > 0 ? (
-                                    productsWithStock.map(product => (
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+                                            <TableCell><Skeleton className="h-5 w-1/2 mx-auto" /></TableCell>
+                                            <TableCell><Skeleton className="h-5 w-1/4 mx-auto" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                                            <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    products.map(product => {
+                                        const stockLevel = product.stock ? (product.stock / 200) * 100 : 0; // Assume max stock is 200 for progress bar
+                                        return (
                                         <TableRow key={product.id}>
                                             <TableCell className="font-medium">{product.name}</TableCell>
                                             <TableCell className="text-center">${product.price.toFixed(2)}</TableCell>
-                                            <TableCell className="text-center">{Math.round(product.stockLevel)}</TableCell>
+                                            <TableCell className="text-center">{product.stock || 0}</TableCell>
                                             <TableCell>
-                                                <Progress value={product.stockLevel} className="w-full" />
+                                                <Progress value={stockLevel} className="w-full" />
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <SheetTrigger asChild>
@@ -84,19 +101,7 @@ export function InventoryView() {
                                                 </SheetTrigger>
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    initialProducts.map(product => (
-                                         <TableRow key={product.id}>
-                                            <TableCell className="font-medium">{product.name}</TableCell>
-                                            <TableCell className="text-center">${product.price.toFixed(2)}</TableCell>
-                                            <TableCell className="text-center">...</TableCell>
-                                            <TableCell>
-                                                <Progress value={0} className="w-full" />
-                                            </TableCell>
-                                            <TableCell className="text-right"></TableCell>
-                                        </TableRow>
-                                    ))
+                                    )})
                                 )}
                             </TableBody>
                         </Table>
