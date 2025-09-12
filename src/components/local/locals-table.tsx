@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { localUsers, locals as initialLocals } from "@/lib/data";
+import { localUsers } from "@/lib/data";
 import type { Local } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -21,14 +21,31 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 
+interface LocalsTableProps {
+    locals: Local[];
+    onLocalUpdated: (local: Local) => void;
+    onLocalDeleted: (localId: string) => void;
+}
 
-export function LocalsTable() {
-    const [locals, setLocals] = useState(initialLocals);
+export function LocalsTable({ locals, onLocalUpdated, onLocalDeleted }: LocalsTableProps) {
     const [selectedLocal, setSelectedLocal] = useState<Local | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const { toast } = useToast();
 
-    const handleDelete = (localId: string) => {
-        setLocals(currentLocals => currentLocals.filter(l => l.id !== localId));
+    const handleSave = (updatedLocal: Local) => {
+        onLocalUpdated(updatedLocal);
+        setIsSheetOpen(false);
+        setSelectedLocal(null);
+    };
+
+    const handleDeleteInForm = (localId: string) => {
+        onLocalDeleted(localId);
+        setIsSheetOpen(false);
+        setSelectedLocal(null);
+    }
+    
+    const handleDeleteInDialog = (localId: string) => {
+        onLocalDeleted(localId);
         toast({
             title: "Local Eliminado",
             description: "El local ha sido eliminado correctamente.",
@@ -57,13 +74,19 @@ export function LocalsTable() {
                                     <TableCell>{local.address}</TableCell>
                                     <TableCell>{user?.name || "N/A"}</TableCell>
                                     <TableCell className="text-right">
-                                         <Sheet onOpenChange={(isOpen) => !isOpen && setSelectedLocal(null)}>
+                                         <Sheet open={isSheetOpen && selectedLocal?.id === local.id} onOpenChange={(isOpen) => {
+                                             setIsSheetOpen(isOpen);
+                                             if (!isOpen) setSelectedLocal(null);
+                                         }}>
                                             <SheetTrigger asChild>
-                                                <Button variant="ghost" size="icon" onClick={() => setSelectedLocal(local)}>
+                                                <Button variant="ghost" size="icon" onClick={() => {
+                                                    setSelectedLocal(local);
+                                                    setIsSheetOpen(true);
+                                                }}>
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
                                             </SheetTrigger>
-                                            {selectedLocal?.id === local.id && (
+                                            {selectedLocal && (
                                             <SheetContent>
                                                 <SheetHeader>
                                                     <SheetTitle>Editar Local</SheetTitle>
@@ -71,7 +94,11 @@ export function LocalsTable() {
                                                         Realice cambios en el local aquí. Haga clic en guardar cuando haya terminado.
                                                     </SheetDescription>
                                                 </SheetHeader>
-                                                <EditLocalForm local={selectedLocal} onSave={() => setSelectedLocal(null)} />
+                                                <EditLocalForm 
+                                                    local={selectedLocal} 
+                                                    onSave={handleSave} 
+                                                    onDelete={handleDeleteInForm}
+                                                />
                                             </SheetContent>
                                             )}
                                         </Sheet>
@@ -91,7 +118,7 @@ export function LocalsTable() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(local.id)}>
+                                                <AlertDialogAction onClick={() => handleDeleteInDialog(local.id)}>
                                                     Eliminar
                                                 </AlertDialogAction>
                                                 </AlertDialogFooter>

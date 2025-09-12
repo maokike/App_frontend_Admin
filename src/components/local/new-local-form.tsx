@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Store } from "lucide-react";
+import { Store, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { localUsers } from "@/lib/data";
+import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import type { Local } from "@/lib/types";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
@@ -18,8 +21,15 @@ const formSchema = z.object({
   userId: z.string().min(1, "Por favor, asigna un usuario."),
 });
 
-export function NewLocalForm() {
+type FormValues = z.infer<typeof formSchema>;
+
+interface NewLocalFormProps {
+    onLocalAdded: (local: FormValues) => void;
+}
+
+export function NewLocalForm({ onLocalAdded }: NewLocalFormProps) {
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -33,12 +43,12 @@ export function NewLocalForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const selectedUser = localUsers.find(u => u.id === values.userId);
+    onLocalAdded(values);
     toast({
       title: "Local Creado",
       description: `El local ${values.name} ha sido añadido y asignado a ${selectedUser?.name}.`,
     });
     form.reset();
-    // Here you would typically refetch the data to update the list
   }
 
   return (
@@ -109,10 +119,16 @@ export function NewLocalForm() {
             )}
             />
         </div>
-        <Button type="submit">
-            <Store className="mr-2 h-4 w-4" />
-            Agregar Local
-        </Button>
+        <div className="flex items-center gap-4">
+            <Button variant="outline" type="button" onClick={() => router.push('/login')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver
+            </Button>
+            <Button type="submit">
+                <Store className="mr-2 h-4 w-4" />
+                Agregar Local
+            </Button>
+        </div>
       </form>
     </Form>
   );

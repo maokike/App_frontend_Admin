@@ -21,10 +21,11 @@ const formSchema = z.object({
 
 interface EditLocalFormProps {
     local: Local;
-    onSave: () => void;
+    onSave: (updatedLocal: Local) => void;
+    onDelete: (localId: string) => void;
 }
 
-export function EditLocalForm({ local, onSave }: EditLocalFormProps) {
+export function EditLocalForm({ local, onSave, onDelete }: EditLocalFormProps) {
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -38,13 +39,21 @@ export function EditLocalForm({ local, onSave }: EditLocalFormProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    const updatedLocal = { ...local, ...values };
+    onSave(updatedLocal);
     toast({
       title: "Local Actualizado",
       description: `El local ${values.name} ha sido actualizado.`,
     });
-    // Here you would typically update the data on the server
-    console.log(values);
-    onSave();
+  }
+
+  function handleDelete() {
+    onDelete(local.id);
+     toast({
+        title: "Local Eliminado",
+        description: "El local ha sido eliminado correctamente.",
+        variant: "destructive",
+    });
   }
 
   return (
@@ -114,7 +123,7 @@ export function EditLocalForm({ local, onSave }: EditLocalFormProps) {
           )}
         />
         <div className="flex justify-between items-center gap-4 pt-4">
-            <Button type="button" variant="destructive">
+            <Button type="button" variant="destructive" onClick={handleDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar Local
             </Button>
