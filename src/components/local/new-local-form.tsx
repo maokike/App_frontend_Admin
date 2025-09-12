@@ -14,6 +14,7 @@ import { localUsers } from "@/lib/data";
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres."),
+  phone: z.string().optional(),
   userId: z.string().min(1, "Por favor, asigna un usuario."),
 });
 
@@ -25,6 +26,7 @@ export function NewLocalForm() {
     defaultValues: {
       name: "",
       address: "",
+      phone: "",
       userId: "",
     },
   });
@@ -62,6 +64,19 @@ export function NewLocalForm() {
               <FormLabel>Dirección</FormLabel>
               <FormControl>
                 <Input placeholder="Av. Siempre Viva 123" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Teléfono (Opcional)</FormLabel>
+              <FormControl>
+                <Input placeholder="+54 9 11 1234-5678" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
