@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { EditProductForm } from "@/components/product/edit-product-form";
+import { useRouter } from "next/navigation";
 
 interface ProductWithStock extends Product {
     stockLevel: number;
@@ -18,6 +19,7 @@ interface ProductWithStock extends Product {
 export function InventoryView() {
     const [productsWithStock, setProductsWithStock] = useState<ProductWithStock[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         // Generate stock levels only on the client side
@@ -33,11 +35,13 @@ export function InventoryView() {
             prevProducts.map(p => p.id === updatedProduct.id ? { ...p, ...updatedProduct, stockLevel: p.stockLevel } : p)
         );
         setSelectedProduct(null);
+        router.push('/login');
     };
 
     const handleProductDelete = (productId: string) => {
         setProductsWithStock(prevProducts => prevProducts.filter(p => p.id !== productId));
         setSelectedProduct(null);
+        router.push('/login');
     };
 
 
