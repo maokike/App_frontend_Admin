@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Store } from "lucide-react";
+import { ArrowLeft, Store } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { localUsers } from "@/lib/data";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
@@ -20,6 +21,7 @@ const formSchema = z.object({
 
 export function NewLocalForm() {
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,7 +39,7 @@ export function NewLocalForm() {
       title: "Local Creado",
       description: `El local ${values.name} ha sido añadido y asignado a ${selectedUser?.name}.`,
     });
-    form.reset();
+    router.push('/login');
   }
 
   return (
@@ -106,10 +108,16 @@ export function NewLocalForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">
-          <Store className="mr-2 h-4 w-4" />
-          Agregar Local
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button type="submit">
+            <Store className="mr-2 h-4 w-4" />
+            Agregar Local
+          </Button>
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Button>
+        </div>
       </form>
     </Form>
   );
