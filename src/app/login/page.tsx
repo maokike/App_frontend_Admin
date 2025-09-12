@@ -16,11 +16,14 @@ import NewProductPage from '../new-product/page';
 import DailySummaryPage from '../daily-summary/page';
 import InventoryPage from '../inventory/page';
 import NewLocalPage from '../new-local/page';
+import { locals } from '@/lib/data';
 
 
 export default function DashboardPage() {
   const [role, setRole] = useState<UserRole>('local');
   const pathname = usePathname();
+  // Simulate fetching the local's name. In a real app, this would come from auth/DB.
+  const localName = role === 'local' ? locals[0].name : undefined;
 
   const renderContent = () => {
     switch (pathname) {
@@ -114,7 +117,7 @@ export default function DashboardPage() {
           <div className="md:hidden">
             <SidebarTrigger />
           </div>
-          <DashboardHeader currentRole={role} onRoleChange={setRole} />
+          <DashboardHeader currentRole={role} onRoleChange={setRole} localName={localName} />
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
           {renderContent()}
