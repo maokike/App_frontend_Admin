@@ -1,4 +1,4 @@
-import type { Product, Sale, User } from './types';
+import type { Product, Sale, User, Local } from './types';
 
 export const products: Product[] = [
   { id: 'prod_1', name: 'Artisan Bread', price: 5.50 },
@@ -39,4 +39,10 @@ export const localUsers: User[] = [
     { id: 'user_1', name: 'John Doe', role: 'local' },
     { id: 'user_2', name: 'Jane Smith', role: 'local' },
     { id: 'user_3', name: 'Peter Jones', role: 'local' },
+];
+
+export let locals: Local[] = [
+    { id: 'local_1', name: 'Tienda Central', address: 'Av. Principal 123', phone: '111-222-333', userId: 'user_1' },
+    { id: 'local_2', name: 'Sucursal Norte', address: 'Calle Falsa 456', phone: '444-555-666', userId: 'user_2' },
+    { id: 'local_3', name: 'Punto de Venta Sur', address: 'Boulevard del Sol 789', phone: '777-888-999', userId: 'user_3' },
 ];

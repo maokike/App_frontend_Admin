@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { localUsers } from "@/lib/data";
-import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre del local debe tener al menos 2 caracteres."),
@@ -21,7 +20,6 @@ const formSchema = z.object({
 
 export function NewLocalForm() {
   const { toast } = useToast();
-  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,85 +37,82 @@ export function NewLocalForm() {
       title: "Local Creado",
       description: `El local ${values.name} ha sido añadido y asignado a ${selectedUser?.name}.`,
     });
-    router.push('/login');
+    form.reset();
+    // Here you would typically refetch the data to update the list
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-lg">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre del Local</FormLabel>
-              <FormControl>
-                <Input placeholder="Mi Tiendita" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Dirección</FormLabel>
-              <FormControl>
-                <Input placeholder="Av. Siempre Viva 123" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Teléfono (Opcional)</FormLabel>
-              <FormControl>
-                <Input placeholder="+54 9 11 1234-5678" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="userId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Asignar Usuario (Local)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un usuario" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {localUsers.map(user => (
-                            <SelectItem key={user.id} value={user.id}>
-                                {user.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex items-center gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Button>
-          <Button type="submit">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
+        <div className="grid md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nombre del Local</FormLabel>
+                <FormControl>
+                    <Input placeholder="Mi Tiendita" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Dirección</FormLabel>
+                <FormControl>
+                    <Input placeholder="Av. Siempre Viva 123" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Teléfono (Opcional)</FormLabel>
+                <FormControl>
+                    <Input placeholder="+54 9 11 1234-5678" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="userId"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Asignar Usuario (Local)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un usuario" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {localUsers.map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                    {user.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <Button type="submit">
             <Store className="mr-2 h-4 w-4" />
             Agregar Local
-          </Button>
-        </div>
+        </Button>
       </form>
     </Form>
   );

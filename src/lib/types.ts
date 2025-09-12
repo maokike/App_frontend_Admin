@@ -22,3 +22,11 @@ export type Sale = {
   paymentMethod: PaymentMethod;
   date: Date;
 };
+
+export type Local = {
+    id: string;
+    name: string;
+    address: string;
+    phone?: string;
+    userId: string;
+};
