@@ -109,13 +109,13 @@ export function NewLocalForm() {
           )}
         />
         <div className="flex items-center gap-4">
-          <Button type="submit">
-            <Store className="mr-2 h-4 w-4" />
-            Agregar Local
-          </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
+          </Button>
+          <Button type="submit">
+            <Store className="mr-2 h-4 w-4" />
+            Agregar Local
           </Button>
         </div>
       </form>
