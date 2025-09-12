@@ -19,7 +19,7 @@ export default function NewProductPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Ingresar Producto Nuevo</CardTitle>
+                    <CardTitle className="font-headline">Ingresar Nuevo Producto</CardTitle>
                     <CardDescription>Añada un nuevo producto al inventario.</CardDescription>
                 </CardHeader>
                 <CardContent>

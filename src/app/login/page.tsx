@@ -69,9 +69,9 @@ export default function DashboardPage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/new-product" tooltip="Nuevo Producto" isActive={pathname === '/new-product'}>
+                <SidebarMenuButton as={Link} href="/new-product" tooltip="Gestion de producto" isActive={pathname === '/new-product'}>
                     <PackagePlus />
-                    <span>Nuevo Producto</span>
+                    <span>Gestion de producto</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
