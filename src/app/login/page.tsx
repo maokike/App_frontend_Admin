@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { UserRole } from '@/lib/types';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from '@/components/ui/sidebar';
-import { DollarSign, LayoutDashboard, UserPlus, PackagePlus, ClipboardList, Warehouse } from 'lucide-react';
+import { DollarSign, LayoutDashboard, UserPlus, PackagePlus, ClipboardList, Warehouse, Store } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
 import { LocalDashboard } from '@/components/dashboard/local-dashboard';
@@ -15,6 +15,7 @@ import NewCustomerPage from '../new-customer/page';
 import NewProductPage from '../new-product/page';
 import DailySummaryPage from '../daily-summary/page';
 import InventoryPage from '../inventory/page';
+import NewLocalPage from '../new-local/page';
 
 
 export default function DashboardPage() {
@@ -31,6 +32,8 @@ export default function DashboardPage() {
         return <DailySummaryPage />;
       case '/inventory':
         return <InventoryPage />;
+      case '/new-local':
+        return <NewLocalPage />;
       case '/login':
         return role === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
       default:
@@ -81,6 +84,12 @@ export default function DashboardPage() {
                 <SidebarMenuButton as={Link} href="/inventory" tooltip="Inventario" isActive={pathname === '/inventory'}>
                     <Warehouse />
                     <span>Inventario</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton as={Link} href="/new-local" tooltip="Nuevo Local" isActive={pathname === '/new-local'}>
+                    <Store />
+                    <span>Nuevo Local</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
