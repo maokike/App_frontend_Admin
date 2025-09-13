@@ -41,7 +41,7 @@ export function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
-      router.push('/login');
+      router.push('/');
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -82,7 +82,7 @@ export function LoginForm() {
             });
         }
         
-        router.push('/login');
+        router.push('/');
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",

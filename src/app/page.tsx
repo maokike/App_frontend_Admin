@@ -10,15 +10,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
-      router.push('/login');
+    // If the user is loaded and has a role, redirect them to the correct dashboard.
+    if (!loading && user && role) {
+      if (role === 'admin') {
+        router.replace('/admin-dashboard');
+      } else {
+        router.replace('/local-dashboard');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, role, router]);
   
+  // While loading or if user is logged in but role is not yet determined, show skeleton.
+  // Also, if user is present, it means we are in the process of redirecting, so show loading.
   if (loading || user) {
      return (
       <div className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
@@ -28,6 +35,7 @@ export default function LoginPage() {
     );
   }
 
+  // If not loading and no user, show the login form.
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <div className="flex flex-col items-center space-y-2 mb-8">

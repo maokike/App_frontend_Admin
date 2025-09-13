@@ -12,9 +12,19 @@ export default function AdminDashboardPage() {
 
     useEffect(() => {
         if (!loading && role && role !== 'admin') {
-            router.push('/local-dashboard');
+            router.replace('/local-dashboard');
         }
     }, [role, loading, router]);
+
+    if (loading || !role) {
+      // You can return a loading spinner here
+      return <div>Loading...</div>;
+    }
+    
+    if (role !== 'admin') {
+      // Or a generic "access denied" message
+      return <div>Access Denied</div>;
+    }
 
     return <DashboardPage />;
 }

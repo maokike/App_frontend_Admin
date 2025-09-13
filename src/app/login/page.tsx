@@ -35,17 +35,6 @@ export default function DashboardPage() {
       router.push('/');
     }
   }, [user, loading, router]);
-  
-  useEffect(() => {
-    // This effect handles redirection after login
-    if (!loading && user && authRole && pathname === '/login') {
-      if (authRole === 'admin') {
-        router.replace('/admin-dashboard');
-      } else {
-        router.replace('/local-dashboard');
-      }
-    }
-  }, [user, loading, authRole, router, pathname]);
 
 
   useEffect(() => {
@@ -74,7 +63,7 @@ export default function DashboardPage() {
     fetchLocalName();
   }, [user, authRole, simulatedRole]);
   
-  if (loading || !user || !authRole || (pathname === '/login')) {
+  if (loading || !user || !authRole) {
     return (
        <div className="flex items-start min-h-screen bg-background">
         <Skeleton className="hidden md:block h-screen w-[256px]" />
@@ -109,6 +98,11 @@ export default function DashboardPage() {
       case '/local-dashboard':
         return <LocalDashboard />;
       default:
+         // Default to the correct dashboard if the path is just /login
+        if (pathname === '/login') {
+          if (authRole === 'admin') return <AdminDashboard />;
+          if (authRole === 'local') return <LocalDashboard />;
+        }
         return null;
     }
   }
