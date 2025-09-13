@@ -35,6 +35,17 @@ export default function DashboardPage() {
       router.push('/');
     }
   }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (!loading && user && authRole) {
+        if (authRole === 'admin') {
+            router.push('/admin-dashboard');
+        } else {
+            router.push('/local-dashboard');
+        }
+    }
+  }, [user, loading, authRole, router]);
+
 
   useEffect(() => {
     async function fetchLocalName() {
@@ -62,9 +73,9 @@ export default function DashboardPage() {
     fetchLocalName();
   }, [user, authRole, simulatedRole]);
   
-  if (loading || !user) {
+  if (loading || !user || (pathname === '/login' && authRole)) {
     return (
-       <div className="flex items-start min-h-screen">
+       <div className="flex items-start min-h-screen bg-background">
         <Skeleton className="hidden md:block h-screen w-[256px]" />
         <div className="flex-1 p-8">
             <Skeleton className="h-16 w-full mb-8" />
@@ -80,6 +91,7 @@ export default function DashboardPage() {
   };
 
   const renderContent = () => {
+    // This is now handled by individual pages, but we keep it for shared layout
     switch (pathname) {
       case '/new-customer':
         return <NewCustomerPage />;
@@ -91,10 +103,12 @@ export default function DashboardPage() {
         return <InventoryPage />;
       case '/new-local':
         return <NewLocalPage />;
-      case '/login':
-        return effectiveRole === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
+      case '/admin-dashboard':
+        return <AdminDashboard />;
+      case '/local-dashboard':
+        return <LocalDashboard />;
       default:
-        return effectiveRole === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
+        return null;
     }
   }
 
@@ -114,7 +128,7 @@ export default function DashboardPage() {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton as={Link} href="/login" tooltip="Dashboard" isActive={pathname === '/login'}>
+              <SidebarMenuButton as={Link} href={authRole === 'admin' ? "/admin-dashboard" : "/local-dashboard"} tooltip="Dashboard" isActive={pathname.includes('dashboard')}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
               </SidebarMenuButton>

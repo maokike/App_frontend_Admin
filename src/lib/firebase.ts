@@ -4,12 +4,14 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  "projectId": "appadmin-a3f30",
-  "appId": "1:675707797449:web:96823c8e438ffb089c8a94",
-  "storageBucket": "appadmin-a3f30.appspot.com",
-  "apiKey": "AIzaSyDEfeMpw3s2T3fS2yvJKdxns2Z3M5Chgog",
-  "authDomain": "appadmin-a3f30.firebaseapp.com",
-  "messagingSenderId": "675707797449"
+  projectId: "appadmin-a3f30",
+  apiKey: "AIzaSyBWFRIAEKDm3WdyPkaLHT8OW6K-yEQjw9g",
+  authDomain: "appadmin-a3f30.firebaseapp.com",
+  projectId: "appadmin-a3f30",
+  storageBucket: "appadmin-a3f30.firebasestorage.app",
+  messagingSenderId: "533090173010",
+  appId: "1:533090173010:web:2da612d8ef1e8012e05f8b",
+  measurementId: "G-FDCJZCHENE"
 };
 
 // Initialize Firebase
