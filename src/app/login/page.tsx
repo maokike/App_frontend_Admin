@@ -37,14 +37,15 @@ export default function DashboardPage() {
   }, [user, loading, router]);
   
   useEffect(() => {
-    if (!loading && user && authRole) {
-        if (authRole === 'admin') {
-            router.push('/admin-dashboard');
-        } else {
-            router.push('/local-dashboard');
-        }
+    // This effect handles redirection after login
+    if (!loading && user && authRole && pathname === '/login') {
+      if (authRole === 'admin') {
+        router.replace('/admin-dashboard');
+      } else {
+        router.replace('/local-dashboard');
+      }
     }
-  }, [user, loading, authRole, router]);
+  }, [user, loading, authRole, router, pathname]);
 
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export default function DashboardPage() {
     fetchLocalName();
   }, [user, authRole, simulatedRole]);
   
-  if (loading || !user || (pathname === '/login' && authRole)) {
+  if (loading || !user || !authRole || (pathname === '/login')) {
     return (
        <div className="flex items-start min-h-screen bg-background">
         <Skeleton className="hidden md:block h-screen w-[256px]" />
