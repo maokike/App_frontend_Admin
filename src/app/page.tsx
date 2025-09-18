@@ -14,7 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If the user is loaded and has a role, redirect them to the correct dashboard.
+    // If loading is finished, and we have a user and a role, redirect.
     if (!loading && user && role) {
       if (role === 'admin') {
         router.replace('/admin-dashboard');
@@ -24,14 +24,21 @@ export default function LoginPage() {
     }
   }, [user, loading, role, router]);
   
-  // While loading or if user is logged in but role is not yet determined, show skeleton.
-  // Also, if user is present, it means we are in the process of redirecting, so show loading.
+  // While loading, or if user is logged in but we are still waiting for the role to redirect, show a loading screen.
   if (loading || user) {
      return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
-        <Skeleton className="h-20 w-full max-w-sm" />
-        <Skeleton className="h-10 w-full max-w-sm mt-4" />
-      </div>
+        <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
+            <div className="flex flex-col items-center space-y-4">
+                <div className="flex items-center space-x-2">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                    </div>
+                </div>
+                <p className="text-muted-foreground">Verificando credenciales...</p>
+            </div>
+        </main>
     );
   }
 

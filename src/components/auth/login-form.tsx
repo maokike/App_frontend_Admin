@@ -41,7 +41,7 @@ export function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
-      router.push('/');
+      // No redirection here, page.tsx will handle it
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -60,16 +60,14 @@ export function LoginForm() {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Check if user exists in Firestore
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-            // New user, create a document in Firestore
             await setDoc(userDocRef, {
                 name: user.displayName,
                 email: user.email,
-                role: 'local', // Default role for new signups
+                role: 'local', 
             });
              toast({
                 title: "Account Created!",
@@ -81,8 +79,7 @@ export function LoginForm() {
                 description: "¡Bienvenido de nuevo!",
             });
         }
-        
-        router.push('/');
+        // No redirection here, page.tsx will handle it
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",
