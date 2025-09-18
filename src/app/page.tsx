@@ -13,12 +13,17 @@ export default function LoginPage() {
   const { user, loading, role } = useAuth();
   const router = useRouter();
 
+  // useEffect for debugging
   useEffect(() => {
     console.log("Debug -> user:", user, "loading:", loading, "role:", role);
+  }, [user, loading, role]);
+
+  // useEffect for redirection
+  useEffect(() => {
     if (!loading && user && role) {
       if (role === 'admin') {
         router.replace('/admin-dashboard');
-      } else {
+      } else if (role === 'local') {
         router.replace('/local-dashboard');
       }
     }
@@ -29,10 +34,8 @@ export default function LoginPage() {
         <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
             <div className="flex flex-col items-center space-y-4">
                 <div className="flex items-center space-x-2">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-[250px]" />
-                        <Skeleton className="h-4 w-[200px]" />
+                    <div className="bg-primary text-primary-foreground p-3 rounded-full animate-pulse">
+                      <DollarSign className="h-8 w-8" />
                     </div>
                 </div>
                 <p className="text-muted-foreground">Verificando credenciales...</p>
