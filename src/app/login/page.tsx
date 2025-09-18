@@ -30,58 +30,66 @@ export default function DashboardPage() {
 
   const effectiveRole = authRole === 'admin' ? (simulatedRole || authRole) : authRole;
 
+  // 🔹 Si no hay usuario -> al login
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
   }, [user, loading, router]);
 
+  // 🔹 Si hay usuario y rol -> redirigir al dashboard correspondiente
+  useEffect(() => {
+    if (!loading && user && authRole) {
+      if (authRole === 'admin') {
+        router.push('/admin-dashboard');
+      } else if (authRole === 'local') {
+        router.push('/local-dashboard');
+      }
+    }
+  }, [user, loading, authRole, router]);
 
   useEffect(() => {
     async function fetchLocalName() {
-        if (user && authRole === 'local') {
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if(userDoc.exists()) {
-                const userData = userDoc.data();
-                if(userData.localId) {
-                    const localDocRef = doc(db, 'locals', userData.localId);
-                    const localDoc = await getDoc(localDocRef);
-                    if(localDoc.exists()) {
-                        setLocalName(localDoc.data().name);
-                    }
-                }
+      if (user && authRole === 'local') {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.localId) {
+            const localDocRef = doc(db, 'locals', userData.localId);
+            const localDoc = await getDoc(localDocRef);
+            if (localDoc.exists()) {
+              setLocalName(localDoc.data().name);
             }
-        } else if (authRole === 'admin' && simulatedRole === 'local') {
-            // For now, if admin simulates local, we don't have a specific local assigned.
-            // This could be enhanced later.
-            setLocalName("Simulated Local");
-        } else {
-            setLocalName(undefined);
+          }
         }
+      } else if (authRole === 'admin' && simulatedRole === 'local') {
+        setLocalName("Simulated Local");
+      } else {
+        setLocalName(undefined);
+      }
     }
     fetchLocalName();
   }, [user, authRole, simulatedRole]);
-  
+
   if (loading || !user || !authRole) {
     return (
-       <div className="flex items-start min-h-screen bg-background">
+      <div className="flex items-start min-h-screen bg-background">
         <Skeleton className="hidden md:block h-screen w-[256px]" />
         <div className="flex-1 p-8">
-            <Skeleton className="h-16 w-full mb-8" />
-            <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-16 w-full mb-8" />
+          <Skeleton className="h-64 w-full" />
         </div>
       </div>
     )
   }
-  
+
   const handleLogout = async () => {
     await auth.signOut();
     router.push('/');
   };
 
   const renderContent = () => {
-    // This is now handled by individual pages, but we keep it for shared layout
     switch (pathname) {
       case '/new-customer':
         return <NewCustomerPage />;
@@ -98,11 +106,6 @@ export default function DashboardPage() {
       case '/local-dashboard':
         return <LocalDashboard />;
       default:
-         // Default to the correct dashboard if the path is just /login
-        if (pathname === '/login') {
-          if (authRole === 'admin') return <AdminDashboard />;
-          if (authRole === 'local') return <LocalDashboard />;
-        }
         return null;
     }
   }
@@ -113,7 +116,7 @@ export default function DashboardPage() {
         <SidebarHeader>
           <div className="flex items-center gap-3">
             <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-                <DollarSign className="h-6 w-6" />
+              <DollarSign className="h-6 w-6" />
             </div>
             <h1 className="text-xl font-semibold font-headline text-primary group-data-[collapsible=icon]:hidden">
               Sales Tracker
@@ -124,58 +127,58 @@ export default function DashboardPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton as={Link} href={authRole === 'admin' ? "/admin-dashboard" : "/local-dashboard"} tooltip="Dashboard" isActive={pathname.includes('dashboard')}>
-                  <LayoutDashboard />
-                  <span>Dashboard</span>
+                <LayoutDashboard />
+                <span>Dashboard</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton as={Link} href="/new-customer" tooltip="Nuevo Cliente" isActive={pathname === '/new-customer'}>
-                  <UserPlus />
-                  <span>Nuevo Cliente</span>
+                <UserPlus />
+                <span>Nuevo Cliente</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/new-product" tooltip="Gestion de producto" isActive={pathname === '/new-product'}>
-                    <PackagePlus />
-                    <span>Gestion de producto</span>
-                </SidebarMenuButton>
+              <SidebarMenuButton as={Link} href="/new-product" tooltip="Gestion de producto" isActive={pathname === '/new-product'}>
+                <PackagePlus />
+                <span>Gestion de producto</span>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/daily-summary" tooltip="Resumen Diario" isActive={pathname === '/daily-summary'}>
-                    <ClipboardList />
-                    <span>Resumen Diario</span>
-                </SidebarMenuButton>
+              <SidebarMenuButton as={Link} href="/daily-summary" tooltip="Resumen Diario" isActive={pathname === '/daily-summary'}>
+                <ClipboardList />
+                <span>Resumen Diario</span>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/inventory" tooltip="Inventario" isActive={pathname === '/inventory'}>
-                    <Warehouse />
-                    <span>Inventario</span>
-                </SidebarMenuButton>
+              <SidebarMenuButton as={Link} href="/inventory" tooltip="Inventario" isActive={pathname === '/inventory'}>
+                <Warehouse />
+                <span>Inventario</span>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             {authRole === 'admin' && (
               <SidebarMenuItem>
-                  <SidebarMenuButton as={Link} href="/new-local" tooltip="Gestion Locales" isActive={pathname === '/new-local'}>
-                      <Store />
-                      <span>Gestion Locales</span>
-                  </SidebarMenuButton>
+                <SidebarMenuButton as={Link} href="/new-local" tooltip="Gestion Locales" isActive={pathname === '/new-local'}>
+                  <Store />
+                  <span>Gestion Locales</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:items-center">
-            <div className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-sidebar-accent w-full">
-                <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://i.pravatar.cc/150?u=${user.uid}`} alt="User" data-ai-hint="user avatar" />
-                    <AvatarFallback>{user.name?.[0].toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                    <span className="font-semibold text-sm">{user.name}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{effectiveRole}</span>
-                </div>
-                <button onClick={handleLogout} className="ml-auto group-data-[collapsible=icon]:mx-auto">
-                    <LogOut className="h-5 w-5 text-muted-foreground hover:text-foreground"/>
-                </button>
+          <div className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-sidebar-accent w-full">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={`https://i.pravatar.cc/150?u=${user.uid}`} alt="User" data-ai-hint="user avatar" />
+              <AvatarFallback>{user.name?.[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <span className="font-semibold text-sm">{user.name}</span>
+              <span className="text-xs text-muted-foreground capitalize">{effectiveRole}</span>
             </div>
+            <button onClick={handleLogout} className="ml-auto group-data-[collapsible=icon]:mx-auto">
+              <LogOut className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+            </button>
+          </div>
         </SidebarFooter>
       </Sidebar>
       <main className="flex-1">

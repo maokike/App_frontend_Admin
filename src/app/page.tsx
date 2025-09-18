@@ -14,7 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If loading is finished, and we have a user and a role, redirect.
+    console.log("Debug -> user:", user, "loading:", loading, "role:", role);
     if (!loading && user && role) {
       if (role === 'admin') {
         router.replace('/admin-dashboard');
@@ -24,8 +24,7 @@ export default function LoginPage() {
     }
   }, [user, loading, role, router]);
   
-  // While loading, or if user is logged in but we are still waiting for the role to redirect, show a loading screen.
-  if (loading || user) {
+  if (loading || (!loading && user)) {
      return (
         <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
             <div className="flex flex-col items-center space-y-4">
@@ -42,7 +41,6 @@ export default function LoginPage() {
     );
   }
 
-  // If not loading and no user, show the login form.
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <div className="flex flex-col items-center space-y-2 mb-8">
