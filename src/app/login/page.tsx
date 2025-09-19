@@ -1,32 +1,31 @@
 "use client";
 
-import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
+import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
+import { LocalDashboard } from '@/components/dashboard/local-dashboard';
 
-export default function RedirectPage() {
+export default function LoginPage() {
   const { role, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
-    // No hacer nada mientras la autenticación está en curso.
     if (loading) {
-      return;
+      return; // Espera a que termine la carga
     }
-
-    // Una vez que la carga ha terminado, decidimos a dónde redirigir.
     if (role === 'admin') {
       router.replace('/admin-dashboard');
     } else if (role === 'local') {
       router.replace('/local-dashboard');
     } else {
-      // Si no hay rol (y no estamos cargando), el usuario no está autenticado o hay un problema.
-      // Lo enviamos de vuelta a la página de inicio para que inicie sesión.
+      // Si no hay rol (y no se está cargando), el usuario no está autenticado o hubo un problema.
+      // Se le envía de vuelta a la página principal para que inicie sesión.
       router.replace('/');
     }
   }, [role, loading, router]);
+
 
   // Muestra un indicador de carga mientras se determina la redirección.
   return (

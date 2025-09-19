@@ -11,10 +11,15 @@ export default function LoginPage() {
   const { user, loading, role } = useAuth();
   const router = useRouter();
 
-  // useEffect has been removed to prevent automatic redirection.
-  // The user will always land on the login page first.
+  // Redirige al usuario a la página de "/login" para manejar la lógica de redirección allí.
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/login');
+    }
+  }, [user, loading, router]);
 
-  if (loading) {
+
+  if (loading || (!loading && user)) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
         <div className="flex flex-col items-center space-y-4">
@@ -23,15 +28,13 @@ export default function LoginPage() {
               <DollarSign className="h-8 w-8" />
             </div>
           </div>
-          <p className="text-muted-foreground">Cargando...</p>
+          <p className="text-muted-foreground">Verificando credenciales...</p>
         </div>
       </main>
     );
   }
   
-  // If user is already logged in, they will be redirected by the /login page logic after submitting the form
-  // Or if they manually navigate away. But the initial page will always be this one.
-
+  // Si no hay usuario y la carga ha terminado, muestra el formulario de login.
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <div className="flex flex-col items-center space-y-2 mb-8">
