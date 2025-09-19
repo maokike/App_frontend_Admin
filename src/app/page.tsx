@@ -11,18 +11,10 @@ export default function LoginPage() {
   const { user, loading, role } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    console.log("Debug -> user:", user, "loading:", loading, "role:", role);
-    if (!loading && user && role) {
-      if (role === 'admin') {
-        router.replace('/admin-dashboard');
-      } else if (role === 'local') {
-        router.replace('/local-dashboard');
-      }
-    }
-  }, [user, loading, role, router]);
+  // useEffect has been removed to prevent automatic redirection.
+  // The user will always land on the login page first.
 
-  if (loading || (!loading && user)) {
+  if (loading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
         <div className="flex flex-col items-center space-y-4">
@@ -31,12 +23,15 @@ export default function LoginPage() {
               <DollarSign className="h-8 w-8" />
             </div>
           </div>
-          <p className="text-muted-foreground">Verificando credenciales...</p>
+          <p className="text-muted-foreground">Cargando...</p>
         </div>
       </main>
     );
   }
   
+  // If user is already logged in, they will be redirected by the /login page logic after submitting the form
+  // Or if they manually navigate away. But the initial page will always be this one.
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <div className="flex flex-col items-center space-y-2 mb-8">
