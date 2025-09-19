@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data() as User;
+          console.log('User data from Firebase:', userData);
+          console.log('Role found:', userData.role);
           setUser({ ...userData, uid: firebaseUser.uid });
           setRole(userData.role);
         } else {
