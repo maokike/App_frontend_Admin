@@ -11,12 +11,14 @@ import type { Local } from "@/lib/types";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 
 export default function NewLocalPage() {
     const [locals, setLocals] = useState<Local[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const router = useRouter();
 
     useEffect(() => {
         const localsCollection = collection(db, "locals");
@@ -36,6 +38,7 @@ export default function NewLocalPage() {
                 title: "Local Creado",
                 description: `El local ${newLocal.name} ha sido añadido.`,
             });
+            router.push('/');
         } catch (error) {
             toast({ title: "Error", description: "No se pudo crear el local", variant: "destructive" });
         }
@@ -49,6 +52,7 @@ export default function NewLocalPage() {
                 title: "Local Actualizado",
                 description: `El local ${updatedLocal.name} ha sido actualizado.`,
             });
+            router.push('/');
        } catch (error) {
             toast({ title: "Error", description: "No se pudo actualizar el local", variant: "destructive" });
        }
@@ -63,6 +67,7 @@ export default function NewLocalPage() {
                 description: "El local ha sido eliminado correctamente.",
                 variant: "destructive",
             });
+            router.push('/');
         } catch (error) {
             toast({ title: "Error", description: "No se pudo eliminar el local", variant: "destructive" });
         }

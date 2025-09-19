@@ -40,14 +40,14 @@ export function InventoryView() {
             stock: updatedProduct.stock,
         });
         setSelectedProduct(null);
-        router.push('/login'); 
+        router.push('/'); 
     };
 
     const handleProductDelete = async (productId: string) => {
         const productRef = doc(db, "products", productId);
         await deleteDoc(productRef);
         setSelectedProduct(null);
-        router.push('/login');
+        router.push('/');
     };
 
     return (
