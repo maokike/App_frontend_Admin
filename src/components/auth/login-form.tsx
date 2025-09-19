@@ -41,7 +41,7 @@ export function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
-      router.replace('/');
+      router.push('/');
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -60,7 +60,7 @@ export function LoginForm() {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(db, 'Usuarios', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
@@ -79,7 +79,7 @@ export function LoginForm() {
                 description: "¡Bienvenido de nuevo!",
             });
         }
-        router.replace('/');
+        router.push('/');
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",

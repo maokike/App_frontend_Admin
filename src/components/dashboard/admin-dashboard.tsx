@@ -52,7 +52,7 @@ export function AdminDashboard() {
     });
 
     // Fetch new customers (placeholder)
-    const usersCol = collection(db, "users");
+    const usersCol = collection(db, "Usuarios");
     const q = query(usersCol, where("rol", "==", "local"));
     getDocs(q).then(snapshot => setNewCustomers(snapshot.size));
 

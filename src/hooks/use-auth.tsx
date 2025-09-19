@@ -26,13 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('📧 User email:', firebaseUser.email);
         
         // 1. Try to fetch user by UID first
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocRef = doc(db, 'Usuarios', firebaseUser.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           console.log('✅ User found by UID:', userData);
-          console.log('🎭 Role found:', userData.rol);
+          console.log('🎭 Rol found:', userData.rol);
 
           const userWithUid = {
             ...userData,
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (firebaseUser.email) {
             const usersQuery = query(
-              collection(db, 'users'), 
+              collection(db, 'Usuarios'), 
               where('email', '==', firebaseUser.email)
             );
             const querySnapshot = await getDocs(usersQuery);
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const userDocFromEmail = querySnapshot.docs[0];
               const userData = userDocFromEmail.data();
               console.log('✅ User found by email:', userData);
-              console.log('🎭 Role found:', userData.rol);
+              console.log('🎭 Rol found:', userData.rol);
 
               const userWithUid = {
                 ...userData,
@@ -71,9 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.log('❌ No user document found by UID or email');
               
               // 🔍 DEBUG: MOSTRAR TODOS LOS USUARIOS EN FIRESTORE
-              console.log('Todos los documentos en colección "users":');
+              console.log('Todos los documentos en colección "Usuarios":');
               try {
-                const allUsersQuery = query(collection(db, 'users'));
+                const allUsersQuery = query(collection(db, 'Usuarios'));
                 const allUsersSnapshot = await getDocs(allUsersQuery);
                 allUsersSnapshot.forEach((doc) => {
                   console.log('Document ID:', doc.id, 'Data:', doc.data());

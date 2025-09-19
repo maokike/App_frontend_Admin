@@ -1,7 +1,6 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -24,10 +23,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    // This is to allow cross-origin requests from the preview window.
-    allowedDevOrigins: ['https://*.cloudworkstations.dev'],
-  },
+  // 👇 CORRECCIÓN: Agregar el protocolo y puerto completo
+  allowedDevOrigins: [
+    'http://localhost:9003',
+    'http://192.168.1.60:9003',
+  ],
 };
 
 export default nextConfig;

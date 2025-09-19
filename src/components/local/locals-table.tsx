@@ -36,7 +36,7 @@ export function LocalsTable({ locals, loading, onLocalUpdated, onLocalDeleted }:
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const q = query(collection(db, "users"));
+            const q = query(collection(db, "Usuarios"));
             const querySnapshot = await getDocs(q);
             const userList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
             setUsers(userList);

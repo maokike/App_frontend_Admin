@@ -33,7 +33,7 @@ export function EditLocalForm({ local, onSave, onDelete }: EditLocalFormProps) {
 
   useEffect(() => {
     const fetchUsers = async () => {
-        const q = query(collection(db, "users"), where("rol", "==", "local"));
+        const q = query(collection(db, "Usuarios"), where("rol", "==", "local"));
         const querySnapshot = await getDocs(q);
         const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         setLocalUsers(users);
