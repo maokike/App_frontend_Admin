@@ -22,7 +22,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
-  const { user, loading, role: authRole } = useAuth();
+  const { user, loading, rol: authRole } = useAuth();
   const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -160,6 +160,12 @@ export default function DashboardPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
+             <SidebarMenuItem className="mt-auto">
+              <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
+                <LogOut />
+                <span>Cerrar Sesión</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:items-center">
@@ -172,9 +178,6 @@ export default function DashboardPage() {
               <span className="font-semibold text-sm">{user.name}</span>
               <span className="text-xs text-muted-foreground capitalize">{effectiveRole}</span>
             </div>
-            <button onClick={handleLogout} className="ml-auto group-data-[collapsible=icon]:mx-auto">
-              <LogOut className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-            </button>
           </div>
         </SidebarFooter>
       </Sidebar>
