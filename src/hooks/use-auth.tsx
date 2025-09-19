@@ -23,43 +23,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         console.log('🔥 Firebase user authenticated with UID:', firebaseUser.uid);
+        console.log('📧 User email:', firebaseUser.email);
         
+        // 1. Try to fetch user by UID first
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
-          const userData = userDocSnap.data() as User;
+          const userData = userDocSnap.data();
           console.log('✅ User found by UID:', userData);
           console.log('🎭 Role found:', userData.rol);
 
-          setUser({ 
-            ...userData, 
+          const userWithUid = {
+            ...userData,
             uid: firebaseUser.uid,
             id: userDocSnap.id
-          });
+          } as User & { uid: string };
+          
+          setUser(userWithUid);
           setRole(userData.rol);
         } else {
+          // 2. Fallback: Search by email
           console.log(`🟡 User with UID ${firebaseUser.uid} not found. Searching by email...`);
-          const usersQuery = query(
-            collection(db, 'users'), 
-            where('email', '==', firebaseUser.email)
-          );
-          const querySnapshot = await getDocs(usersQuery);
           
-          if (!querySnapshot.empty) {
-            const userDocFromEmail = querySnapshot.docs[0];
-            const userData = userDocFromEmail.data() as User;
-            console.log('✅ User found by email:', userData);
-            console.log('🎭 Role found:', userData.rol);
+          if (firebaseUser.email) {
+            const usersQuery = query(
+              collection(db, 'users'), 
+              where('email', '==', firebaseUser.email)
+            );
+            const querySnapshot = await getDocs(usersQuery);
+            
+            if (!querySnapshot.empty) {
+              const userDocFromEmail = querySnapshot.docs[0];
+              const userData = userDocFromEmail.data();
+              console.log('✅ User found by email:', userData);
+              console.log('🎭 Role found:', userData.rol);
 
-            setUser({ 
-              ...userData, 
-              uid: firebaseUser.uid,
-              id: userDocFromEmail.id 
-            });
-            setRole(userData.rol);
+              const userWithUid = {
+                ...userData,
+                uid: firebaseUser.uid,
+                id: userDocFromEmail.id
+              } as User & { uid: string };
+              
+              setUser(userWithUid);
+              setRole(userData.rol);
+            } else {
+              console.log('❌ No user document found by UID or email');
+              
+              // 🔍 DEBUG: MOSTRAR TODOS LOS USUARIOS EN FIRESTORE
+              console.log('Todos los documentos en colección "users":');
+              try {
+                const allUsersQuery = query(collection(db, 'users'));
+                const allUsersSnapshot = await getDocs(allUsersQuery);
+                allUsersSnapshot.forEach((doc) => {
+                  console.log('Document ID:', doc.id, 'Data:', doc.data());
+                });
+              } catch (error) {
+                console.error('Error fetching all users:', error);
+              }
+              
+              setUser(null);
+              setRole(null);
+            }
           } else {
-            console.log('❌ No user document found by UID or email:', firebaseUser.email);
+            console.log('❌ User has no email address');
             setUser(null);
             setRole(null);
           }
