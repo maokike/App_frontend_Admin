@@ -41,7 +41,7 @@ export function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
-      // No redirection here, page.tsx will handle it
+      router.push('/login'); // Redirige a la página de login para que ella gestione el dashboard
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -79,7 +79,7 @@ export function LoginForm() {
                 description: "¡Bienvenido de nuevo!",
             });
         }
-        // No redirection here, page.tsx will handle it
+        router.push('/login'); // Redirige a la página de login para que ella gestione el dashboard
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",

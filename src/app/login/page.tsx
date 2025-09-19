@@ -40,10 +40,11 @@ export default function DashboardPage() {
   // 🔹 Si hay usuario y rol -> redirigir al dashboard correspondiente
   useEffect(() => {
     if (!loading && user && authRole) {
-      if (authRole === 'admin' && pathname !== '/admin-dashboard') {
-        router.push('/admin-dashboard');
-      } else if (authRole === 'local' && pathname !== '/local-dashboard') {
-        router.push('/local-dashboard');
+      const targetDashboard = `/${authRole}-dashboard`;
+      // Redirige solo si no estamos ya en la ruta de dashboard correcta
+      // o en una de las sub-páginas del menú.
+      if (!pathname.startsWith(targetDashboard) && pathname === '/login') {
+         router.push(targetDashboard);
       }
     }
   }, [user, loading, authRole, router, pathname]);
@@ -90,6 +91,11 @@ export default function DashboardPage() {
   };
 
   const renderContent = () => {
+    // Si estamos en la ruta de un dashboard específico, lo renderizamos.
+    if (pathname === '/admin-dashboard') return <AdminDashboard />;
+    if (pathname === '/local-dashboard') return <LocalDashboard />;
+    
+    // Renderizado de las subpáginas
     switch (pathname) {
       case '/new-customer':
         return <NewCustomerPage />;
@@ -101,14 +107,8 @@ export default function DashboardPage() {
         return <InventoryPage />;
       case '/new-local':
         return <NewLocalPage />;
-      case '/admin-dashboard':
-        return <AdminDashboard />;
-      case '/local-dashboard':
-        return <LocalDashboard />;
       default:
-        // Por defecto, muestra el dashboard correspondiente al rol.
-        if (authRole === 'admin') return <AdminDashboard />;
-        if (authRole === 'local') return <LocalDashboard />;
+        // Fallback mientras se redirige
         return null;
     }
   }
