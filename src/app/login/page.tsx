@@ -40,13 +40,13 @@ export default function DashboardPage() {
   // 🔹 Si hay usuario y rol -> redirigir al dashboard correspondiente
   useEffect(() => {
     if (!loading && user && authRole) {
-      if (authRole === 'admin') {
+      if (authRole === 'admin' && pathname !== '/admin-dashboard') {
         router.push('/admin-dashboard');
-      } else if (authRole === 'local') {
+      } else if (authRole === 'local' && pathname !== '/local-dashboard') {
         router.push('/local-dashboard');
       }
     }
-  }, [user, loading, authRole, router]);
+  }, [user, loading, authRole, router, pathname]);
 
   useEffect(() => {
     async function fetchLocalName() {
@@ -106,6 +106,9 @@ export default function DashboardPage() {
       case '/local-dashboard':
         return <LocalDashboard />;
       default:
+        // Por defecto, muestra el dashboard correspondiente al rol.
+        if (authRole === 'admin') return <AdminDashboard />;
+        if (authRole === 'local') return <LocalDashboard />;
         return null;
     }
   }
