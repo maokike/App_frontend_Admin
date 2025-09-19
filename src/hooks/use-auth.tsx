@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserRole, User } from '@/lib/types';
 
@@ -22,20 +22,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
+        console.log('🔥 Firebase user authenticated with UID:', firebaseUser.uid);
+        console.log('🔥 Firebase user email:', firebaseUser.email);
+        
+        // Query for the user document by email
+        const usersCollectionRef = collection(db, 'users');
+        const q = query(usersCollectionRef, where("email", "==", firebaseUser.email));
+        
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          // Assuming email is unique, so we take the first document
+          const userDoc = querySnapshot.docs[0];
           const userData = userDoc.data() as User;
-          console.log('User data from Firebase:', userData);
-          console.log('Role found:', userData.role);
-          setUser({ ...userData, uid: firebaseUser.uid });
+          
+          console.log('📄 User data from Firestore:', userData);
+          console.log('🎭 Role found:', userData.role);
+
+          setUser({ 
+            ...userData, 
+            uid: firebaseUser.uid,
+            id: userDoc.id
+          });
           setRole(userData.role);
         } else {
-          // Handle case where user exists in Auth but not in Firestore
+          console.log('❌ No user document found in Firestore with email:', firebaseUser.email);
           setUser(null);
           setRole(null);
         }
       } else {
+        console.log('👤 No Firebase user authenticated');
         setUser(null);
         setRole(null);
       }
