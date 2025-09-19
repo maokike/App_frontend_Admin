@@ -24,23 +24,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         console.log('🔥 Firebase user authenticated with UID:', firebaseUser.uid);
         
-        // 1. Try to fetch user by UID first (most efficient)
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data() as User;
           console.log('✅ User found by UID:', userData);
-          console.log('🎭 Role found:', userData.role);
+          console.log('🎭 Role found:', userData.rol);
 
           setUser({ 
             ...userData, 
             uid: firebaseUser.uid,
             id: userDocSnap.id
           });
-          setRole(userData.role);
+          setRole(userData.rol);
         } else {
-          // 2. Fallback: If not found by UID, search by email
           console.log(`🟡 User with UID ${firebaseUser.uid} not found. Searching by email...`);
           const usersQuery = query(
             collection(db, 'users'), 
@@ -52,14 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userDocFromEmail = querySnapshot.docs[0];
             const userData = userDocFromEmail.data() as User;
             console.log('✅ User found by email:', userData);
-            console.log('🎭 Role found:', userData.role);
+            console.log('🎭 Role found:', userData.rol);
 
             setUser({ 
               ...userData, 
               uid: firebaseUser.uid,
               id: userDocFromEmail.id 
             });
-            setRole(userData.role);
+            setRole(userData.rol);
           } else {
             console.log('❌ No user document found by UID or email:', firebaseUser.email);
             setUser(null);

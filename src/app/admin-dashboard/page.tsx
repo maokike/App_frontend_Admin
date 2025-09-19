@@ -4,7 +4,7 @@ import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import DashboardPage from "../login/page";
+import { LocalDashboard } from "@/components/dashboard/local-dashboard";
 
 export default function AdminDashboardPage() {
     const { role, loading } = useAuth();
@@ -22,9 +22,9 @@ export default function AdminDashboardPage() {
     }
     
     if (role !== 'admin') {
-      // Or a generic "access denied" message
-      return <div>Access Denied</div>;
+      // Or a generic "access denied" message while redirecting
+      return <LocalDashboard />;
     }
 
-    return <DashboardPage />;
+    return <AdminDashboard />;
 }

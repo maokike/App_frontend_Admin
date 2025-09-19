@@ -41,7 +41,7 @@ export function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
-      router.push('/login'); // Redirige a la página de login para que ella gestione el dashboard
+      router.replace('/');
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -67,7 +67,7 @@ export function LoginForm() {
             await setDoc(userDocRef, {
                 name: user.displayName,
                 email: user.email,
-                role: 'local', 
+                rol: 'local', 
             });
              toast({
                 title: "Account Created!",
@@ -79,7 +79,7 @@ export function LoginForm() {
                 description: "¡Bienvenido de nuevo!",
             });
         }
-        router.push('/login'); // Redirige a la página de login para que ella gestione el dashboard
+        router.replace('/');
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",

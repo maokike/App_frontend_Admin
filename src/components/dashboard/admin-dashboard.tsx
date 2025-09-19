@@ -53,7 +53,7 @@ export function AdminDashboard() {
 
     // Fetch new customers (placeholder)
     const usersCol = collection(db, "users");
-    const q = query(usersCol, where("role", "==", "local"));
+    const q = query(usersCol, where("rol", "==", "local"));
     getDocs(q).then(snapshot => setNewCustomers(snapshot.size));
 
     return () => unsubscribe();

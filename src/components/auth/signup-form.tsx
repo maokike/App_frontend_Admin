@@ -44,7 +44,7 @@ export function SignupForm() {
       await setDoc(doc(db, 'users', user.uid), {
         name: name,
         email: email,
-        role: 'local', // Default role for new signups
+        rol: 'local', // Default role for new signups
       });
 
       toast({
@@ -79,7 +79,7 @@ export function SignupForm() {
             await setDoc(userDocRef, {
                 name: user.displayName,
                 email: user.email,
-                role: 'local', // Default role for new signups
+                rol: 'local', // Default role for new signups
             });
              toast({
                 title: "Account Created!",
@@ -87,7 +87,7 @@ export function SignupForm() {
             });
         }
         
-        router.push('/login');
+        router.push('/');
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",

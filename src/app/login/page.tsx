@@ -30,24 +30,20 @@ export default function DashboardPage() {
 
   const effectiveRole = authRole === 'admin' ? (simulatedRole || authRole) : authRole;
 
-  // 🔹 Si no hay usuario -> al login
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/');
+      router.replace('/');
     }
   }, [user, loading, router]);
-
-  // 🔹 Si hay usuario y rol -> redirigir al dashboard correspondiente
+  
   useEffect(() => {
-    if (!loading && user && authRole) {
-      const targetDashboard = `/${authRole}-dashboard`;
-      // Redirige solo si no estamos ya en la ruta de dashboard correcta
-      // o en una de las sub-páginas del menú.
-      if (!pathname.startsWith(targetDashboard) && pathname === '/login') {
-         router.push(targetDashboard);
+    if (!loading && authRole) {
+      const targetDashboard = authRole === 'admin' ? '/admin-dashboard' : '/local-dashboard';
+      if (pathname !== targetDashboard && !pathname.startsWith('/new-') && pathname !== '/inventory' && pathname !== '/daily-summary') {
+        router.replace(targetDashboard);
       }
     }
-  }, [user, loading, authRole, router, pathname]);
+  }, [authRole, loading, router, pathname]);
 
   useEffect(() => {
     async function fetchLocalName() {
@@ -91,11 +87,9 @@ export default function DashboardPage() {
   };
 
   const renderContent = () => {
-    // Si estamos en la ruta de un dashboard específico, lo renderizamos.
-    if (pathname === '/admin-dashboard') return <AdminDashboard />;
-    if (pathname === '/local-dashboard') return <LocalDashboard />;
+    if (pathname.includes('/admin-dashboard')) return <AdminDashboard />;
+    if (pathname.includes('/local-dashboard')) return <LocalDashboard />;
     
-    // Renderizado de las subpáginas
     switch (pathname) {
       case '/new-customer':
         return <NewCustomerPage />;
@@ -108,8 +102,8 @@ export default function DashboardPage() {
       case '/new-local':
         return <NewLocalPage />;
       default:
-        // Fallback mientras se redirige
-        return null;
+        // Fallback to the correct dashboard based on role
+        return authRole === 'admin' ? <AdminDashboard /> : <LocalDashboard />;
     }
   }
 

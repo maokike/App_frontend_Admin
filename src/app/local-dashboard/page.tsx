@@ -3,7 +3,8 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import DashboardPage from "../login/page";
+import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
+import { LocalDashboard } from "@/components/dashboard/local-dashboard";
 
 export default function LocalDashboardPage() {
     const { role, loading } = useAuth();
@@ -21,10 +22,9 @@ export default function LocalDashboardPage() {
     }
 
     if (role !== 'local') {
-        // Or a generic "access denied" message
-        return <div>Access Denied</div>;
+        // Or a generic "access denied" message while redirecting
+        return <AdminDashboard />;
     }
 
-
-    return <DashboardPage />;
+    return <LocalDashboard />;
 }

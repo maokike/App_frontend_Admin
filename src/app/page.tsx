@@ -8,35 +8,35 @@ import { DollarSign } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Si no estamos cargando y ya hay un usuario, lo mandamos a la página de login
-    // que se encargará de redirigirlo al dashboard correcto.
-    if (!loading && user) {
-      router.replace('/login');
+    console.log("Debug -> user:", user, "loading:", loading, "role:", role);
+    if (!loading && user && role) {
+      if (role === 'admin') {
+        router.replace('/admin-dashboard');
+      } else if (role === 'local') {
+        router.replace('/local-dashboard');
+      }
     }
-  }, [user, loading, router]);
-  
-  if (loading || user) {
-    // Muestra una pantalla de carga mientras se verifica la sesión
-    // o mientras se redirige al usuario que ya ha iniciado sesión.
-     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
-            <div className="flex flex-col items-center space-y-4">
-                <div className="flex items-center space-x-2">
-                    <div className="bg-primary text-primary-foreground p-3 rounded-full animate-pulse">
-                      <DollarSign className="h-8 w-8" />
-                    </div>
-                </div>
-                <p className="text-muted-foreground">Verificando credenciales...</p>
+  }, [user, loading, role, router]);
+
+  if (loading || (!loading && user)) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex items-center space-x-2">
+            <div className="bg-primary text-primary-foreground p-3 rounded-full animate-pulse">
+              <DollarSign className="h-8 w-8" />
             </div>
-        </main>
+          </div>
+          <p className="text-muted-foreground">Verificando credenciales...</p>
+        </div>
+      </main>
     );
   }
-
-  // Si no estamos cargando y no hay usuario, muestra el formulario de login.
+  
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <div className="flex flex-col items-center space-y-2 mb-8">

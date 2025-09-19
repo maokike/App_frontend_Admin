@@ -6,7 +6,7 @@ export type User = {
   id?: string;
   uid?: string;
   name: string;
-  role: UserRole;
+  rol: UserRole;
   email: string;
 };
 
