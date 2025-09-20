@@ -6,22 +6,12 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import type { UserRole } from "@/lib/types";
+import { useAuth } from "@/hooks/use-auth";
 
-interface NewProductPageProps {
-    role: UserRole;
-}
-
-export default function NewProductPage({ role }: NewProductPageProps) {
+export default function NewProductPage() {
+    const { role } = useAuth();
     return (
         <div className="grid gap-8">
-             <div className="flex justify-start">
-                <Button asChild variant="outline">
-                    <Link href="/login">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Volver al Dashboard
-                    </Link>
-                </Button>
-            </div>
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Ingresar Nuevo Producto</CardTitle>

@@ -1,0 +1,223 @@
+"use client";
+
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  DollarSign,
+  Home,
+  LogOut,
+  Package,
+  PlusCircle,
+  Settings,
+  ShoppingCart,
+  Users,
+  Warehouse,
+  Newspaper,
+  Store,
+} from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { DashboardHeader } from "@/components/dashboard/header";
+import { Local, UserRole } from "@/lib/types";
+import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, role, loading } = useAuth();
+  const router = useRouter();
+  const [localName, setLocalName] = useState<string | undefined>(undefined);
+  const [simulatedRole, setSimulatedRole] = useState<UserRole>("admin");
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/");
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    if (role) {
+      setSimulatedRole(role);
+    }
+  }, [role]);
+
+
+  useEffect(() => {
+    if (role === 'local' && user && (user as any).localId) {
+        const localRef = doc(db, "locals", (user as any).localId);
+        const unsubscribe = onSnapshot(localRef, (doc) => {
+            if (doc.exists()) {
+                setLocalName(doc.data().name);
+            } else {
+                setLocalName(undefined);
+            }
+        });
+        return () => unsubscribe();
+    } else if (role === 'admin') {
+         setLocalName(undefined);
+    }
+  }, [role, user]);
+
+
+  if (loading || !user) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex items-center space-x-2">
+            <div className="bg-primary text-primary-foreground p-3 rounded-full animate-pulse">
+              <DollarSign className="h-8 w-8" />
+            </div>
+          </div>
+          <p className="text-muted-foreground">Cargando dashboard...</p>
+        </div>
+      </main>
+    );
+  }
+
+  const isAdmin = role === 'admin';
+  const currentViewRole = isAdmin ? simulatedRole : role;
+
+  const handleRoleChange = (newRole: UserRole) => {
+    if (isAdmin) {
+      setSimulatedRole(newRole);
+      if (newRole === 'admin') {
+          router.push('/admin-dashboard');
+      } else {
+          router.push('/local-dashboard');
+      }
+    }
+  };
+
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <DollarSign />
+            </div>
+            <span className="text-lg font-semibold font-headline">
+              Sales Tracker
+            </span>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/login" isActive={true}>
+                <Home />
+                Dashboard
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {currentViewRole === 'admin' && (
+                <>
+                    <SidebarGroup>
+                    <SidebarGroupLabel>Administración</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/new-local">
+                                <Store />
+                                Gestionar Locales
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/inventory">
+                                <Warehouse />
+                                Inventario General
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                    </SidebarGroup>
+                </>
+            )}
+             <SidebarGroup>
+                <SidebarGroupLabel>Ventas</SidebarGroupLabel>
+                <SidebarGroupContent>
+                    <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/local-dashboard">
+                        <ShoppingCart />
+                        Nueva Venta
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/daily-summary">
+                        <Newspaper />
+                        Resumen Diario
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+                <SidebarGroupLabel>Gestión</SidebarGroupLabel>
+                <SidebarGroupContent>
+                    <SidebarMenu>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton href="/new-product">
+                        <Package />
+                        Productos
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/new-customer">
+                        <Users />
+                        Clientes
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarGroupContent>
+            </SidebarGroup>
+
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+          <Separator className="mb-2" />
+          <div className="flex items-center gap-3 p-2">
+            <Avatar>
+              <AvatarFallback>{user?.name?.[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{user?.name}</span>
+              <span className="text-xs text-muted-foreground">{user?.email}</span>
+            </div>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-4 border-b bg-background/90 px-6 backdrop-blur-sm">
+            <SidebarTrigger className="md:hidden" />
+            <DashboardHeader 
+                currentRole={currentViewRole!} 
+                onRoleChange={handleRoleChange} 
+                localName={localName} 
+                isAdmin={isAdmin}
+            />
+        </header>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+            {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}

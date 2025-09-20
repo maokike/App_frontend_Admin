@@ -4,8 +4,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
-import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
-import { LocalDashboard } from '@/components/dashboard/local-dashboard';
 
 export default function LoginPage() {
   const { role, loading } = useAuth();
@@ -13,21 +11,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (loading) {
-      return; // Espera a que termine la carga
+      return; // Wait until loading is complete
     }
     if (role === 'admin') {
       router.replace('/admin-dashboard');
     } else if (role === 'local') {
       router.replace('/local-dashboard');
     } else {
-      // Si no hay rol (y no se está cargando), el usuario no está autenticado o hubo un problema.
-      // Se le envía de vuelta a la página principal para que inicie sesión.
-      router.replace('/');
+       // If no role is found after loading, it means the user is not authenticated or there's an issue.
+       // We should redirect them to the main page to log in.
+       router.replace('/');
     }
   }, [role, loading, router]);
 
 
-  // Muestra un indicador de carga mientras se determina la redirección.
+  // Display a loading indicator while determining the redirection path.
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <div className="flex flex-col items-center space-y-4">

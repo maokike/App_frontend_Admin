@@ -4,7 +4,6 @@ import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LocalDashboard } from "@/components/dashboard/local-dashboard";
 
 export default function AdminDashboardPage() {
     const { role, loading } = useAuth();
@@ -16,15 +15,10 @@ export default function AdminDashboardPage() {
         }
     }, [role, loading, router]);
 
-    if (loading || !role) {
-      // You can return a loading spinner here
-      return <div>Loading...</div>;
+    if (loading || (role && role !== 'admin')) {
+      // You can return a loading spinner or a placeholder
+      return <div>Loading or Access Denied...</div>;
     }
     
-    if (role !== 'admin') {
-      // Or a generic "access denied" message while redirecting
-      return <LocalDashboard />;
-    }
-
     return <AdminDashboard />;
 }
