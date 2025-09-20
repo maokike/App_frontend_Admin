@@ -19,8 +19,13 @@ export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin 
   const router = useRouter();
 
   const handleLogout = async () => {
-    await auth.signOut();
-    router.push('/');
+    try {
+        await auth.signOut();
+        router.push('/');
+    } catch (error) {
+        console.error("Error signing out: ", error);
+        // Opcional: mostrar un toast de error
+    }
   };
 
   return (
