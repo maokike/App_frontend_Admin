@@ -5,55 +5,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '../ui/separator';
 import { Button } from '../ui/button';
 import { LogOut } from 'lucide-react';
-import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
 
 interface DashboardHeaderProps {
   currentRole: UserRole;
   onRoleChange: (role: UserRole) => void;
   localName?: string;
   isAdmin: boolean;
+  onLogout: () => void;
 }
 
-export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin }: DashboardHeaderProps) {
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const handleLogout = async () => {
-    try {
-        await signOut(auth);
-        toast({
-            title: "Sesión Cerrada",
-            description: "Has cerrado sesión correctamente.",
-        });
-        router.push('/');
-    } catch (error) {
-        console.error("Error signing out: ", error);
-        toast({
-            title: "Error",
-            description: "No se pudo cerrar la sesión.",
-            variant: "destructive",
-        });
-    }
-  };
-
+export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin, onLogout }: DashboardHeaderProps) {
   return (
     <div className="flex w-full items-center gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
         {currentRole === 'local' && localName && (
-            <>
-                <Separator orientation="vertical" className="h-6" />
-                <span className="text-xl font-semibold text-muted-foreground">{localName}</span>
-            </>
+          <>
+            <Separator orientation="vertical" className="h-6" />
+            <span className="text-xl font-semibold text-muted-foreground">{localName}</span>
+          </>
         )}
       </div>
       <div className="ml-auto flex items-center gap-4">
         {isAdmin && (
           <div className="flex items-center gap-4">
-            <p className="text-sm text-muted-foreground hidden sm:block">Simulate Role:</p>
+            <p className="text-sm text-muted-foreground hidden sm:block">Simular Rol:</p>
             <Select value={currentRole} onValueChange={(value) => onRoleChange(value as UserRole)}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Select role" />
@@ -65,7 +41,7 @@ export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin 
             </Select>
           </div>
         )}
-        <Button variant="outline" size="sm" onClick={handleLogout}>
+        <Button variant="outline" size="sm" onClick={onLogout} className="hidden md:flex">
           <LogOut className="mr-2 h-4 w-4" />
           Cerrar Sesión
         </Button>

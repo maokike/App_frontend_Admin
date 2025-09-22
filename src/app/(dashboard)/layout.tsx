@@ -6,36 +6,38 @@ import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  SidebarGroupLabel,
-  SidebarGroupContent
 } from "@/components/ui/sidebar";
 import {
   DollarSign,
   Home,
   LogOut,
+  Newspaper,
   Package,
-  PlusCircle,
-  Settings,
   ShoppingCart,
+  Store,
   Users,
   Warehouse,
-  Newspaper,
-  Store,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { Local, UserRole } from "@/lib/types";
-import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
+import { UserRole } from "@/lib/types";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardLayout({
   children,
@@ -46,7 +48,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const [localName, setLocalName] = useState<string | undefined>(undefined);
   const [simulatedRole, setSimulatedRole] = useState<UserRole>("admin");
-  
+  const { toast } = useToast();
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/");
@@ -59,23 +62,21 @@ export default function DashboardLayout({
     }
   }, [role]);
 
-
   useEffect(() => {
-    if (role === 'local' && user && (user as any).localId) {
-        const localRef = doc(db, "locals", (user as any).localId);
-        const unsubscribe = onSnapshot(localRef, (doc) => {
-            if (doc.exists()) {
-                setLocalName(doc.data().name);
-            } else {
-                setLocalName(undefined);
-            }
-        });
-        return () => unsubscribe();
+    if (role === 'local' && user?.localId) {
+      const localRef = doc(db, "locals", user.localId);
+      const unsubscribe = onSnapshot(localRef, (doc) => {
+        if (doc.exists()) {
+          setLocalName(doc.data().name);
+        } else {
+          setLocalName(undefined);
+        }
+      });
+      return () => unsubscribe();
     } else if (role === 'admin') {
-         setLocalName(undefined);
+      setLocalName(undefined);
     }
   }, [role, user]);
-
 
   if (loading || !user) {
     return (
@@ -99,13 +100,30 @@ export default function DashboardLayout({
     if (isAdmin) {
       setSimulatedRole(newRole);
       if (newRole === 'admin') {
-          router.push('/admin-dashboard');
+        router.push('/admin-dashboard');
       } else {
-          router.push('/local-dashboard');
+        router.push('/local-dashboard');
       }
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Sesión Cerrada",
+        description: "Has cerrado sesión correctamente.",
+      });
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar la sesión.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -129,95 +147,97 @@ export default function DashboardLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             {currentViewRole === 'admin' && (
-                <>
-                    <SidebarGroup>
-                    <SidebarGroupLabel>Administración</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/new-local">
-                                <Store />
-                                Gestionar Locales
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/inventory">
-                                <Warehouse />
-                                Inventario General
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                    </SidebarGroup>
-                </>
+              <SidebarGroup>
+                <SidebarGroupLabel>Administración</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton href="/new-local">
+                        <Store />
+                        Gestionar Locales
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton href="/inventory">
+                        <Warehouse />
+                        Inventario General
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
             )}
-             <SidebarGroup>
-                <SidebarGroupLabel>Ventas</SidebarGroupLabel>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/local-dashboard">
-                        <ShoppingCart />
-                        Nueva Venta
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/daily-summary">
-                        <Newspaper />
-                        Resumen Diario
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarGroupContent>
-            </SidebarGroup>
-
             <SidebarGroup>
-                <SidebarGroupLabel>Gestión</SidebarGroupLabel>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/new-product">
-                        <Package />
-                        Productos
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/new-customer">
-                        <Users />
-                        Clientes
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarGroupContent>
+              <SidebarGroupLabel>Ventas</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton href="/local-dashboard">
+                      <ShoppingCart />
+                      Nueva Venta
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton href="/daily-summary">
+                      <Newspaper />
+                      Resumen Diario
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
             </SidebarGroup>
-
+            <SidebarGroup>
+              <SidebarGroupLabel>Gestión</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton href="/new-product">
+                      <Package />
+                      Productos
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton href="/new-customer">
+                      <Users />
+                      Clientes
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <Separator className="mb-2" />
-          <div className="flex items-center gap-3 p-2">
-            <Avatar>
-              <AvatarFallback>{user?.name?.[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">{user?.name}</span>
-              <span className="text-xs text-muted-foreground">{user?.email}</span>
+          <Separator className="my-2" />
+          <div className="flex items-center justify-between p-2">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarFallback>{user?.name?.[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{user?.name}</span>
+                <span className="text-xs text-muted-foreground">{user?.email}</span>
+              </div>
             </div>
+            <button onClick={handleLogout} className="p-2 rounded-md hover:bg-sidebar-accent">
+                <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background/90 px-6 backdrop-blur-sm">
-            <SidebarTrigger className="md:hidden" />
-            <DashboardHeader 
-                currentRole={currentViewRole!} 
-                onRoleChange={handleRoleChange} 
-                localName={localName} 
-                isAdmin={isAdmin}
-            />
+          <SidebarTrigger className="md:hidden" />
+          <DashboardHeader 
+            currentRole={currentViewRole!} 
+            onRoleChange={handleRoleChange} 
+            localName={localName} 
+            isAdmin={isAdmin}
+            onLogout={handleLogout}
+          />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-            {children}
+          {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
