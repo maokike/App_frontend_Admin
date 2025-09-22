@@ -6,6 +6,7 @@ import { Separator } from '../ui/separator';
 import { Button } from '../ui/button';
 import { LogOut } from 'lucide-react';
 import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,7 +23,7 @@ export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin 
 
   const handleLogout = async () => {
     try {
-        await auth.signOut();
+        await signOut(auth);
         toast({
             title: "Sesión Cerrada",
             description: "Has cerrado sesión correctamente.",
