@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -32,9 +32,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { UserRole } from "@/lib/types";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -44,10 +41,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, role, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
-  const [localName, setLocalName] = useState<string | undefined>(undefined);
-  const [simulatedRole, setSimulatedRole] = useState<UserRole>("admin");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,28 +50,6 @@ export default function DashboardLayout({
       router.replace("/");
     }
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (role) {
-      setSimulatedRole(role);
-    }
-  }, [role]);
-
-  useEffect(() => {
-    if (role === 'local' && user?.localId) {
-      const localRef = doc(db, "locals", user.localId);
-      const unsubscribe = onSnapshot(localRef, (doc) => {
-        if (doc.exists()) {
-          setLocalName(doc.data().name);
-        } else {
-          setLocalName(undefined);
-        }
-      });
-      return () => unsubscribe();
-    } else if (role === 'admin') {
-      setLocalName(undefined);
-    }
-  }, [role, user]);
 
   const handleLogout = async () => {
     try {
@@ -112,18 +85,6 @@ export default function DashboardLayout({
   }
 
   const isAdmin = role === 'admin';
-  const currentViewRole = isAdmin ? simulatedRole : role;
-
-  const handleRoleChange = (newRole: UserRole) => {
-    if (isAdmin) {
-      setSimulatedRole(newRole);
-      if (newRole === 'admin') {
-        router.push('/admin-dashboard');
-      } else {
-        router.push('/local-dashboard');
-      }
-    }
-  };
 
   return (
     <SidebarProvider>
@@ -146,46 +107,68 @@ export default function DashboardLayout({
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {currentViewRole === 'admin' && (
+            {isAdmin ? (
+              <>
+                <SidebarGroup>
+                  <SidebarGroupLabel>Administración</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton href="/new-local">
+                          <Store />
+                          Gestionar Locales
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton href="/inventory">
+                          <Warehouse />
+                          Inventario General
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+                <SidebarGroup>
+                  <SidebarGroupLabel>Ventas (Vista Local)</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton href="/local-dashboard">
+                          <ShoppingCart />
+                          Nueva Venta
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton href="/daily-summary">
+                          <Newspaper />
+                          Resumen Diario
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </>
+            ) : (
               <SidebarGroup>
-                <SidebarGroupLabel>Administración</SidebarGroupLabel>
+                <SidebarGroupLabel>Ventas</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-local">
-                        <Store />
-                        Gestionar Locales
+                      <SidebarMenuButton href="/local-dashboard">
+                        <ShoppingCart />
+                        Nueva Venta
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton href="/inventory">
-                        <Warehouse />
-                        Inventario General
+                      <SidebarMenuButton href="/daily-summary">
+                        <Newspaper />
+                        Resumen Diario
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
             )}
-            <SidebarGroup>
-              <SidebarGroupLabel>Ventas</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/local-dashboard">
-                      <ShoppingCart />
-                      Nueva Venta
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/daily-summary">
-                      <Newspaper />
-                      Resumen Diario
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
             <SidebarGroup>
               <SidebarGroupLabel>Gestión</SidebarGroupLabel>
               <SidebarGroupContent>
@@ -228,13 +211,7 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background/90 px-6 backdrop-blur-sm">
           <SidebarTrigger className="md:hidden" />
-          <DashboardHeader 
-            currentRole={currentViewRole!} 
-            onRoleChange={handleRoleChange} 
-            localName={localName} 
-            isAdmin={isAdmin}
-            onLogout={handleLogout}
-          />
+          <DashboardHeader />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}
