@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -18,14 +19,16 @@ export function DashboardHeader() {
   const router = useRouter();
   const { toast } = useToast();
   const [localName, setLocalName] = useState<string | undefined>(undefined);
-  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(role);
+  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
 
-  useEffect(() => {
-    setSimulatedRole(role);
-  }, [role]);
+   useEffect(() => {
+    if (!loading) {
+      setSimulatedRole(role);
+    }
+  }, [role, loading]);
   
   useEffect(() => {
-    if (role === 'local' && user?.localId) {
+    if (user?.localId) {
       const localRef = doc(db, "locals", user.localId);
       const unsubscribe = onSnapshot(localRef, (doc) => {
         if (doc.exists()) {
@@ -35,10 +38,10 @@ export function DashboardHeader() {
         }
       });
       return () => unsubscribe();
-    } else if (role === 'admin') {
+    } else {
       setLocalName(undefined);
     }
-  }, [role, user]);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -98,10 +101,6 @@ export function DashboardHeader() {
             </Select>
           </div>
         )}
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Cerrar Sesión
-        </Button>
       </div>
     </div>
   );

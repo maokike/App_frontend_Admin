@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -35,6 +36,7 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardLayout({
   children,
@@ -202,9 +204,9 @@ export default function DashboardLayout({
                 <span className="text-xs text-muted-foreground">{user?.email}</span>
               </div>
             </div>
-            <button onClick={handleLogout} className="p-2 rounded-md hover:bg-sidebar-accent">
+            <Button onClick={handleLogout} variant="ghost" size="icon" aria-label="Cerrar sesión">
                 <LogOut className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </SidebarFooter>
       </Sidebar>
@@ -212,6 +214,11 @@ export default function DashboardLayout({
         <header className="flex h-14 items-center gap-4 border-b bg-background/90 px-6 backdrop-blur-sm">
           <SidebarTrigger className="md:hidden" />
           <DashboardHeader />
+          <div className="ml-auto">
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="hidden md:flex">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}
