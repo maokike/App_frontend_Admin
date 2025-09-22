@@ -41,7 +41,7 @@ export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin,
             </Select>
           </div>
         )}
-        <Button variant="outline" size="sm" onClick={onLogout} className="hidden md:flex">
+        <Button variant="outline" size="sm" onClick={onLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Cerrar Sesión
         </Button>
