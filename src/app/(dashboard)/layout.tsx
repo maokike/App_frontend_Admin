@@ -78,6 +78,24 @@ export default function DashboardLayout({
     }
   }, [role, user]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Sesión Cerrada",
+        description: "Has cerrado sesión correctamente.",
+      });
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar la sesión.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading || !user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
@@ -104,24 +122,6 @@ export default function DashboardLayout({
       } else {
         router.push('/local-dashboard');
       }
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast({
-        title: "Sesión Cerrada",
-        description: "Has cerrado sesión correctamente.",
-      });
-      router.push('/');
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      toast({
-        title: "Error",
-        description: "No se pudo cerrar la sesión.",
-        variant: "destructive",
-      });
     }
   };
 
