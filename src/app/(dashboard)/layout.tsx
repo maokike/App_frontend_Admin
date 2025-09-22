@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +37,10 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import type { UserRole } from "@/lib/types";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
 
 export default function DashboardLayout({
   children,
@@ -46,6 +50,8 @@ export default function DashboardLayout({
   const { user, loading, role } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [localName, setLocalName] = useState<string | undefined>(undefined);
+  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
 
   console.log("DashboardLayout rendering", { user, role, loading });
 
@@ -54,6 +60,28 @@ export default function DashboardLayout({
       router.replace("/");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!loading) {
+      setSimulatedRole(role);
+    }
+  }, [role, loading]);
+  
+  useEffect(() => {
+    if (user?.localId) {
+      const localRef = doc(db, "locals", user.localId);
+      const unsubscribe = onSnapshot(localRef, (doc) => {
+        if (doc.exists()) {
+          setLocalName(doc.data().name);
+        } else {
+          setLocalName(undefined);
+        }
+      });
+      return () => unsubscribe();
+    } else {
+      setLocalName(undefined);
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -70,6 +98,17 @@ export default function DashboardLayout({
         description: "No se pudo cerrar la sesión.",
         variant: "destructive",
       });
+    }
+  };
+  
+  const handleRoleChange = (newRole: UserRole) => {
+    if (role === 'admin') {
+      setSimulatedRole(newRole);
+      if (newRole === 'admin') {
+        router.push('/admin-dashboard');
+      } else {
+        router.push('/local-dashboard');
+      }
     }
   };
 
@@ -90,6 +129,7 @@ export default function DashboardLayout({
   }
 
   const isAdmin = role === 'admin';
+  const currentViewRole = isAdmin ? simulatedRole : role;
 
   return (
     <SidebarProvider>
@@ -214,21 +254,46 @@ export default function DashboardLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b bg-background/90 px-6 backdrop-blur-sm">
+        <header className="flex items-center gap-4 border-b bg-background/90 px-6 py-3 backdrop-blur-sm min-h-[64px]">
           <SidebarTrigger className="md:hidden" />
           
-          {/* TEMPORAL: Reemplaza el DashboardHeader con esto para probar */}
-          <div className="flex w-full items-center justify-between">
-            <h1 className="text-2xl font-bold">Dashboard Test</h1>
-            <button 
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded"
-            >
-              Cerrar Sesión TEST
-            </button>
+          {/* CONTENIDO TEMPORAL - REEMPLAZA TODO EL DashboardHeader */}
+          <div className="flex w-full items-center justify-between bg-yellow-100 p-2 rounded"> {/* Color temporal para verlo mejor */}
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold font-headline text-red-600">DASHBOARD TEST</h1>
+              {currentViewRole === 'local' && localName && (
+                <>
+                  <Separator orientation="vertical" className="h-6" />
+                  <span className="text-xl font-semibold text-muted-foreground">{localName}</span>
+                </>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {isAdmin && (
+                <div className="flex items-center gap-4 bg-blue-100 p-2 rounded">
+                  <p className="text-sm text-muted-foreground hidden sm:block">Simular Rol:</p>
+                  <select 
+                    value={currentViewRole || ''} 
+                    onChange={(e) => handleRoleChange(e.target.value as UserRole)}
+                    className="border p-1 rounded"
+                  >
+                    <option value="local">Local</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              )}
+              
+              <button 
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-4 py-2 rounded flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
           </div>
-          
-          {/* Comenta esto temporalmente */}
+
           {/* <DashboardHeader /> */}
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
