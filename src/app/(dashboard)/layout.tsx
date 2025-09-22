@@ -213,12 +213,20 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="flex h-14 items-center gap-4 border-b bg-background/90 px-6 backdrop-blur-sm">
           <SidebarTrigger className="md:hidden" />
-          <DashboardHeader />
-          <div className="ml-auto">
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="hidden md:flex">
-              <LogOut className="h-4 w-4" />
-            </Button>
+          
+          {/* TEMPORAL: Reemplaza el DashboardHeader con esto para probar */}
+          <div className="flex w-full items-center justify-between">
+            <h1 className="text-2xl font-bold">Dashboard Test</h1>
+            <button 
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded"
+            >
+              Cerrar Sesión TEST
+            </button>
           </div>
+          
+          {/* Comenta esto temporalmente */}
+          {/* <DashboardHeader /> */}
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}
