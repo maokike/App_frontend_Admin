@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { LogOut } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardHeaderProps {
   currentRole: UserRole;
@@ -17,14 +18,23 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ currentRole, onRoleChange, localName, isAdmin }: DashboardHeaderProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     try {
         await auth.signOut();
+        toast({
+            title: "Sesión Cerrada",
+            description: "Has cerrado sesión correctamente.",
+        });
         router.push('/');
     } catch (error) {
         console.error("Error signing out: ", error);
-        // Opcional: mostrar un toast de error
+        toast({
+            title: "Error",
+            description: "No se pudo cerrar la sesión.",
+            variant: "destructive",
+        });
     }
   };
 
