@@ -2,13 +2,20 @@ import { Timestamp } from "firebase/firestore";
 
 export type UserRole = 'admin' | 'local';
 
+export interface LocalAssignment {
+  localId: string;
+  name: string;
+}
+
 export type User = {
   id?: string;
   uid?: string;
   name: string;
   rol: UserRole;
   email: string;
-  localId?: string | null;
+  locales_asignados?: LocalAssignment[];
+  // Legacy field, can be phased out. For now, represents the active local.
+  localId?: string | null; 
 };
 
 export type Product = {

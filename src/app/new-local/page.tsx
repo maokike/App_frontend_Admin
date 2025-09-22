@@ -7,8 +7,8 @@ import { LocalsTable } from "@/components/local/locals-table";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import type { Local } from "@/lib/types";
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, runTransaction } from "firebase/firestore";
+import type { Local, LocalAssignment } from "@/lib/types";
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, runTransaction, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -31,19 +31,25 @@ export default function NewLocalPage() {
         return () => unsubscribe();
     }, []);
 
-    const handleLocalAdded = async (newLocal: Omit<Local, 'id'>) => {
+    const handleLocalAdded = async (newLocalData: Omit<Local, 'id'>) => {
         try {
             await runTransaction(db, async (transaction) => {
                 const newLocalRef = doc(collection(db, "locals"));
-                transaction.set(newLocalRef, newLocal);
+                transaction.set(newLocalRef, { ...newLocalData, id: newLocalRef.id });
 
-                const userRef = doc(db, "Usuarios", newLocal.userId);
-                transaction.update(userRef, { localId: newLocalRef.id });
+                const userRef = doc(db, "Usuarios", newLocalData.userId);
+                const localAssignment: LocalAssignment = {
+                    localId: newLocalRef.id,
+                    name: newLocalData.name
+                };
+                transaction.update(userRef, { 
+                    locales_asignados: arrayUnion(localAssignment)
+                });
             });
             
             toast({
                 title: "Local Creado",
-                description: `El local ${newLocal.name} ha sido añadido.`,
+                description: `El local ${newLocalData.name} ha sido añadido y asignado.`,
             });
             router.push('/');
         } catch (error) {
@@ -59,12 +65,19 @@ export default function NewLocalPage() {
                 const originalLocalDoc = await transaction.get(localRef);
                 const originalLocalData = originalLocalDoc.data() as Local;
 
+                // If user assignment has changed
                 if (originalLocalData.userId !== updatedLocal.userId) {
-                    const oldUserRef = doc(db, "Usuarios", originalLocalData.userId);
-                    transaction.update(oldUserRef, { localId: null });
-
+                    // Remove assignment from old user
+                    if (originalLocalData.userId) {
+                        const oldUserRef = doc(db, "Usuarios", originalLocalData.userId);
+                        const oldAssignment: LocalAssignment = { localId: originalLocalData.id, name: originalLocalData.name };
+                        transaction.update(oldUserRef, { locales_asignados: arrayRemove(oldAssignment) });
+                    }
+                    
+                    // Add assignment to new user
                     const newUserRef = doc(db, "Usuarios", updatedLocal.userId);
-                    transaction.update(newUserRef, { localId: updatedLocal.id });
+                    const newAssignment: LocalAssignment = { localId: updatedLocal.id, name: updatedLocal.name };
+                    transaction.update(newUserRef, { locales_asignados: arrayUnion(newAssignment) });
                 }
 
                 transaction.update(localRef, { ...updatedLocal });
@@ -85,11 +98,16 @@ export default function NewLocalPage() {
         try {
              await runTransaction(db, async (transaction) => {
                 const localRef = doc(db, "locals", localId);
+                const localDoc = await transaction.get(localRef);
+                if (!localDoc.exists()) return;
+                const localData = localDoc.data() as Local;
+
                 transaction.delete(localRef);
 
                 if (userId) {
                     const userRef = doc(db, "Usuarios", userId);
-                    transaction.update(userRef, { localId: null });
+                    const assignmentToRemove: LocalAssignment = { localId: localId, name: localData.name };
+                    transaction.update(userRef, { locales_asignados: arrayRemove(assignmentToRemove) });
                 }
              });
             

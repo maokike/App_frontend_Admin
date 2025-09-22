@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserRole, User } from '@/lib/types';
 
@@ -21,36 +21,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const userDocRef = doc(db, 'Usuarios', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        
+        // Use onSnapshot to listen for real-time updates
+        const unsubscribeSnapshot = onSnapshot(userDocRef, (userDocSnap) => {
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data() as User;
+            
+            const activeLocalId = userData.locales_asignados && userData.locales_asignados.length > 0 
+                ? userData.locales_asignados[0].localId 
+                : null;
 
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data() as User;
-          
-          const userWithDetails = {
-            ...userData,
-            uid: firebaseUser.uid,
-            id: userDocSnap.id,
-          };
-          
-          setUser(userWithDetails);
-          setRole(userData.rol);
+            const userWithDetails: User = {
+              ...userData,
+              uid: firebaseUser.uid,
+              id: userDocSnap.id,
+              localId: activeLocalId, // Set the active localId
+            };
+            
+            setUser(userWithDetails);
+            setRole(userData.rol);
+          } else {
+              console.log(`User document with UID ${firebaseUser.uid} not found in Firestore.`);
+              setUser(null);
+              setRole(null);
+          }
+          setLoading(false);
+        });
 
-        } else {
-            console.log(`User document with UID ${firebaseUser.uid} not found in Firestore.`);
-            setUser(null);
-            setRole(null);
-        }
+        // Return the snapshot listener's unsubscribe function
+        return () => unsubscribeSnapshot();
       } else {
         setUser(null);
         setRole(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   const value = { user, loading, role };
