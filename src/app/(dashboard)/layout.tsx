@@ -71,7 +71,7 @@ export default function DashboardLayout({
       });
     }
   };
-  
+
   if (loading || !user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
@@ -88,66 +88,73 @@ export default function DashboardLayout({
   }
 
   const isAdmin = role === 'admin';
+  const userLocal = user.locales_asignados && user.locales_asignados.length > 0 ? user.locales_asignados[0] : null;
+
+
+  console.log("🟢 LAYOUT - User:", user);
+  console.log("🟢 LAYOUT - Role:", role);
+  console.log("🟢 LAYOUT - isAdmin:", isAdmin);
+
 
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-3">
-             <div className="bg-primary text-primary-foreground p-2 rounded-full">
-                <DollarSign className="h-5 w-5" />
-             </div>
-             <span className="text-xl font-semibold">SalesTrack</span>
+            <div className="bg-primary text-primary-foreground p-2 rounded-full">
+              <DollarSign className="h-5 w-5" />
+            </div>
+            <span className="text-xl font-semibold">SalesTrack</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
-           <SidebarMenu>
-              <SidebarMenuItem>
-                 <SidebarMenuButton href={isAdmin ? "/admin-dashboard" : "/local-dashboard"} isActive={router.pathname === (isAdmin ? "/admin-dashboard" : "/local-dashboard")}>
-                    <Home />
-                    <span>Dashboard</span>
-                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                 <SidebarMenuButton href="/daily-summary" isActive={router.pathname === "/daily-summary"}>
-                    <Newspaper />
-                    <span>Resumen Diario</span>
-                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                 <SidebarMenuButton href="/inventory" isActive={router.pathname === "/inventory"}>
-                    <Warehouse />
-                    <span>Inventario</span>
-                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              {isAdmin && (
-                <SidebarGroup>
-                    <SidebarGroupLabel>Admin</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                             <SidebarMenuItem>
-                                <SidebarMenuButton href="/new-product" isActive={router.pathname === "/new-product"}>
-                                    <Package />
-                                    <span>Productos</span>
-                                </SidebarMenuButton>
-                             </SidebarMenuItem>
-                             <SidebarMenuItem>
-                                <SidebarMenuButton href="/new-local" isActive={router.pathname === "/new-local"}>
-                                    <Store />
-                                    <span>Locales</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton href="/new-customer" isActive={router.pathname === "/new-customer"}>
-                                    <Users />
-                                    <span>Clientes</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-              )}
-           </SidebarMenu>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton href={isAdmin ? "/admin-dashboard" : "/local-dashboard"} isActive={router.pathname === (isAdmin ? "/admin-dashboard" : "/local-dashboard")}>
+                <Home />
+                <span>Dashboard</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/daily-summary" isActive={router.pathname === "/daily-summary"}>
+                <Newspaper />
+                <span>Resumen Diario</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/inventory" isActive={router.pathname === "/inventory"}>
+                <Warehouse />
+                <span>Inventario</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {isAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton href="/new-product" isActive={router.pathname === "/new-product"}>
+                        <Package />
+                        <span>Productos</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton href="/new-local" isActive={router.pathname === "/new-local"}>
+                        <Store />
+                        <span>Locales</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton href="/new-customer" isActive={router.pathname === "/new-customer"}>
+                        <Users />
+                        <span>Clientes</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
+          </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
           <Separator className="my-2" />
@@ -161,19 +168,33 @@ export default function DashboardLayout({
                 <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
               </div>
             </div>
-             <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-             </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex items-center gap-4 border-b bg-background/90 px-6 py-3 backdrop-blur-sm min-h-[64px]">
           <SidebarTrigger className="md:hidden" />
-          <DashboardHeader />
+          <DashboardHeader
+            currentRole={role || 'local'}
+            onRoleChange={(newRole) => {
+              if (role === 'admin') {
+                if (newRole === 'admin') {
+                  router.push('/admin-dashboard');
+                } else {
+                  router.push('/local-dashboard');
+                }
+              }
+            }}
+            localName={userLocal?.name}
+            isAdmin={isAdmin}
+            onLogout={handleLogout}
+          />
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
-            {children}
+          {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
