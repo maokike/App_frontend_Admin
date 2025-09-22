@@ -101,6 +101,10 @@ export function DashboardHeader() {
             </Select>
           </div>
         )}
+         <Button variant="outline" size="sm" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Cerrar Sesión
+        </Button>
       </div>
     </div>
   );
