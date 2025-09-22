@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Landmark, PlusCircle, Trash2 } from "lucide-react";
-import { collection, getDocs, addDoc, Timestamp, writeBatch, doc, runTransaction } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, writeBatch, doc, runTransaction, DocumentReference, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Product } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
@@ -89,8 +89,11 @@ export function SalesForm() {
 
     try {
         await runTransaction(db, async (transaction) => {
+            const productRefs: { ref: DocumentReference<DocumentData>; item: z.infer<typeof saleItemSchema> }[] = [];
             const salesCollectionRef = collection(db, "sales");
-            
+
+            // 1. READ PHASE: Get all product documents and check stock
+            const productsToUpdate = [];
             for (const item of values.products) {
                 const productRef = doc(db, "products", item.productId);
                 const productDoc = await transaction.get(productRef);
@@ -99,20 +102,26 @@ export function SalesForm() {
                     throw new Error(`Producto ${item.productId} no encontrado!`);
                 }
 
-                const newStock = (productDoc.data().stock || 0) - item.quantity;
+                const productData = productDoc.data();
+                const newStock = (productData.stock || 0) - item.quantity;
                 if (newStock < 0) {
-                    throw new Error(`No hay suficiente stock para ${productDoc.data().name}.`);
+                    throw new Error(`No hay suficiente stock para ${productData.name}.`);
                 }
                 
-                transaction.update(productRef, { stock: newStock });
+                productsToUpdate.push({ ref: productRef, newStock, item, productData });
+            }
 
-                const productData = products.find(p => p.id === item.productId);
+            // 2. WRITE PHASE: Update stock and create sale documents
+            for (const { ref, newStock, item, productData } of productsToUpdate) {
+                // Update product stock
+                transaction.update(ref, { stock: newStock });
 
+                // Create sale document
                 const saleDocRef = doc(salesCollectionRef);
                 transaction.set(saleDocRef, {
                     productId: item.productId,
                     quantity: item.quantity,
-                    total: (productData?.price || 0) * item.quantity,
+                    total: (productData.price || 0) * item.quantity,
                     paymentMethod: values.paymentMethod,
                     date: Timestamp.now(),
                     localId: user.localId, 
@@ -129,7 +138,7 @@ export function SalesForm() {
             paymentMethod: "card",
         });
         setTotal(0);
-        router.push('/');
+        router.push('/login');
 
     } catch (error: any) {
         toast({
