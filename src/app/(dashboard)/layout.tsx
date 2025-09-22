@@ -143,185 +143,27 @@ export default function DashboardLayout({
   console.log("🟢 Rendering main layout");
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <DollarSign />
-            </div>
-            <span className="text-lg font-semibold font-headline">
-              Sales Tracker
-            </span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton href="/login" isActive={true}>
-                <Home />
-                Dashboard
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {isAdmin ? (
-              <>
-                <SidebarGroup>
-                  <SidebarGroupLabel>Administración</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/new-local">
-                          <Store />
-                          Gestionar Locales
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/inventory">
-                          <Warehouse />
-                          Inventario General
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-                <SidebarGroup>
-                  <SidebarGroupLabel>Ventas (Vista Local)</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/local-dashboard">
-                          <ShoppingCart />
-                          Nueva Venta
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/daily-summary">
-                          <Newspaper />
-                          Resumen Diario
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              </>
-            ) : (
-              <SidebarGroup>
-                <SidebarGroupLabel>Ventas</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton href="/local-dashboard">
-                        <ShoppingCart />
-                        Nueva Venta
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton href="/daily-summary">
-                        <Newspaper />
-                        Resumen Diario
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
-            <SidebarGroup>
-              <SidebarGroupLabel>Gestión</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/new-product">
-                      <Package />
-                      Productos
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/new-customer">
-                      <Users />
-                      Clientes
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-          <Separator className="my-2" />
-          <div className="flex items-center justify-between p-2">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarFallback>{user?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">{user?.name}</span>
-                <span className="text-xs text-muted-foreground">{user?.email}</span>
-              </div>
-            </div>
-            <button onClick={handleLogout} className="p-2 rounded-md hover:bg-sidebar-accent">
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-          
-          {/* BOTÓN TEMPORAL EN EL FOOTER */}
-          <div className="p-2">
-            <button 
-              onClick={handleLogout}
-              className="w-full bg-red-500 text-white py-2 px-4 rounded flex items-center justify-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Cerrar Sesión (Footer)
-            </button>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="flex items-center gap-4 border-b bg-background/90 px-6 py-3 backdrop-blur-sm min-h-[64px]">
-          <SidebarTrigger className="md:hidden" />
-          
-          {/* CONTENIDO TEMPORAL - REEMPLAZA TODO EL DashboardHeader */}
-          <div className="flex w-full items-center justify-between bg-yellow-100 p-2 rounded"> {/* Color temporal para verlo mejor */}
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold font-headline text-red-600">DASHBOARD TEST</h1>
-              {currentViewRole === 'local' && localName && (
-                <>
-                  <Separator orientation="vertical" className="h-6" />
-                  <span className="text-xl font-semibold text-muted-foreground">{localName}</span>
-                </>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {isAdmin && (
-                <div className="flex items-center gap-4 bg-blue-100 p-2 rounded">
-                  <p className="text-sm text-muted-foreground hidden sm:block">Simular Rol:</p>
-                  <select 
-                    value={currentViewRole || ''} 
-                    onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                    className="border p-1 rounded"
-                  >
-                    <option value="local">Local</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              )}
-              
-              <button 
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-4 py-2 rounded flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Cerrar Sesión</span>
-              </button>
-            </div>
-          </div>
-
-          {/* <DashboardHeader /> */}
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+    <div className="min-h-screen bg-red-100"> {/* Color de fondo temporal */}
+      {/* HEADER SIMPLIFICADO */}
+      <header className="bg-blue-500 text-white p-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">HEADER TEST</h1>
+          <button 
+            onClick={handleLogout}
+            className="bg-red-600 px-4 py-2 rounded font-bold"
+          >
+            🔴 CERRAR SESIÓN TEST
+          </button>
+        </div>
+      </header>
+      
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="p-4">
+        <div className="bg-green-100 p-4 rounded">
+          <h2 className="text-xl font-bold">Contenido principal:</h2>
           {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+        </div>
+      </main>
+    </div>
   );
 }
