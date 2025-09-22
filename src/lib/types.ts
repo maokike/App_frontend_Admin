@@ -8,6 +8,7 @@ export type User = {
   name: string;
   rol: UserRole;
   email: string;
+  localId?: string | null;
 };
 
 export type Product = {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Local } from "@/lib/types";
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, runTransaction } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -33,42 +33,74 @@ export default function NewLocalPage() {
 
     const handleLocalAdded = async (newLocal: Omit<Local, 'id'>) => {
         try {
-            await addDoc(collection(db, "locals"), newLocal);
+            await runTransaction(db, async (transaction) => {
+                const newLocalRef = doc(collection(db, "locals"));
+                transaction.set(newLocalRef, newLocal);
+
+                const userRef = doc(db, "Usuarios", newLocal.userId);
+                transaction.update(userRef, { localId: newLocalRef.id });
+            });
+            
             toast({
                 title: "Local Creado",
                 description: `El local ${newLocal.name} ha sido añadido.`,
             });
-            router.push('/login');
+            router.push('/');
         } catch (error) {
+            console.error("Error creating local: ", error);
             toast({ title: "Error", description: "No se pudo crear el local", variant: "destructive" });
         }
     };
 
     const handleLocalUpdated = async (updatedLocal: Local) => {
        try {
-            const localRef = doc(db, "locals", updatedLocal.id);
-            await updateDoc(localRef, { ...updatedLocal });
-             toast({
+            await runTransaction(db, async (transaction) => {
+                const localRef = doc(db, "locals", updatedLocal.id);
+                const originalLocalDoc = await transaction.get(localRef);
+                const originalLocalData = originalLocalDoc.data() as Local;
+
+                if (originalLocalData.userId !== updatedLocal.userId) {
+                    const oldUserRef = doc(db, "Usuarios", originalLocalData.userId);
+                    transaction.update(oldUserRef, { localId: null });
+
+                    const newUserRef = doc(db, "Usuarios", updatedLocal.userId);
+                    transaction.update(newUserRef, { localId: updatedLocal.id });
+                }
+
+                transaction.update(localRef, { ...updatedLocal });
+            });
+
+            toast({
                 title: "Local Actualizado",
                 description: `El local ${updatedLocal.name} ha sido actualizado.`,
             });
-            router.push('/login');
+            router.push('/');
        } catch (error) {
+            console.error("Error updating local: ", error);
             toast({ title: "Error", description: "No se pudo actualizar el local", variant: "destructive" });
        }
     };
 
-    const handleLocalDeleted = async (localId: string) => {
+    const handleLocalDeleted = async (localId: string, userId: string) => {
         try {
-            const localRef = doc(db, "locals", localId);
-            await deleteDoc(localRef);
+             await runTransaction(db, async (transaction) => {
+                const localRef = doc(db, "locals", localId);
+                transaction.delete(localRef);
+
+                if (userId) {
+                    const userRef = doc(db, "Usuarios", userId);
+                    transaction.update(userRef, { localId: null });
+                }
+             });
+            
             toast({
                 title: "Local Eliminado",
                 description: "El local ha sido eliminado correctamente.",
                 variant: "destructive",
             });
-            router.push('/login');
+            router.push('/');
         } catch (error) {
+            console.error("Error deleting local: ", error);
             toast({ title: "Error", description: "No se pudo eliminar el local", variant: "destructive" });
         }
     };

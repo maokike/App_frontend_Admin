@@ -83,7 +83,7 @@ export function SalesForm() {
     }
     
     if (!user.localId) {
-        toast({ title: "Error", description: "The current user is not assigned to a local.", variant: "destructive" });
+        toast({ title: "Error de asignación", description: "Este usuario no está asignado a ningún local. Contacte a un administrador.", variant: "destructive" });
         return;
     }
 
@@ -96,12 +96,12 @@ export function SalesForm() {
                 const productDoc = await transaction.get(productRef);
 
                 if (!productDoc.exists()) {
-                    throw new Error(`Product ${item.productId} not found!`);
+                    throw new Error(`Producto ${item.productId} no encontrado!`);
                 }
 
                 const newStock = (productDoc.data().stock || 0) - item.quantity;
                 if (newStock < 0) {
-                    throw new Error(`Not enough stock for ${productDoc.data().name}.`);
+                    throw new Error(`No hay suficiente stock para ${productDoc.data().name}.`);
                 }
                 
                 transaction.update(productRef, { stock: newStock });
@@ -121,8 +121,8 @@ export function SalesForm() {
         });
 
         toast({
-            title: "Sale Recorded!",
-            description: `Successfully recorded sale.`,
+            title: "Venta Registrada!",
+            description: `Venta registrada exitosamente.`,
         });
         form.reset({
             products: [{ productId: "", quantity: 1 }],
@@ -133,7 +133,7 @@ export function SalesForm() {
 
     } catch (error: any) {
         toast({
-            title: "Error Recording Sale",
+            title: "Error al Registrar la Venta",
             description: error.message,
             variant: "destructive",
         });
@@ -146,7 +146,7 @@ export function SalesForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-8 items-start">
         <div className="space-y-6">
           <div className="space-y-4">
-            <FormLabel className="text-base font-bold">Products</FormLabel>
+            <FormLabel className="text-base font-bold">Productos</FormLabel>
             {fields.map((field, index) => (
               <div key={field.id} className="grid grid-cols-[1fr_auto_auto] items-end gap-2 p-4 border rounded-lg bg-muted/30">
                 <FormField
@@ -163,7 +163,7 @@ export function SalesForm() {
                         <SelectContent>
                           {products.map(product => (
                             <SelectItem key={product.id} value={product.id}>
-                              {product.name} - ${product.price.toFixed(2)}
+                              {product.name} - ${product.price.toLocaleString('es-AR', { maximumFractionDigits: 0})}
                             </SelectItem>
                           ))}
                         </SelectContent>
