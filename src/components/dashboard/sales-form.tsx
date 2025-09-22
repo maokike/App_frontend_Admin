@@ -16,6 +16,7 @@ import { collection, getDocs, addDoc, Timestamp, writeBatch, doc, runTransaction
 import { db } from "@/lib/firebase";
 import type { Product } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 
 const saleItemSchema = z.object({
   productId: z.string().min(1, "Please select a product."),
@@ -32,6 +33,7 @@ export function SalesForm() {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const { user } = useAuth();
+  const router = useRouter();
 
 
   useEffect(() => {
@@ -79,14 +81,17 @@ export function SalesForm() {
         toast({ title: "Error", description: "You must be logged in to record a sale.", variant: "destructive" });
         return;
     }
+    
+    if (!user.localId) {
+        toast({ title: "Error", description: "The current user is not assigned to a local.", variant: "destructive" });
+        return;
+    }
 
     try {
         await runTransaction(db, async (transaction) => {
             const salesCollectionRef = collection(db, "sales");
-            let totalItems = 0;
-
+            
             for (const item of values.products) {
-                totalItems += item.quantity;
                 const productRef = doc(db, "products", item.productId);
                 const productDoc = await transaction.get(productRef);
 
@@ -103,7 +108,6 @@ export function SalesForm() {
 
                 const productData = products.find(p => p.id === item.productId);
 
-                // Add sale document
                 const saleDocRef = doc(salesCollectionRef);
                 transaction.set(saleDocRef, {
                     productId: item.productId,
@@ -111,7 +115,7 @@ export function SalesForm() {
                     total: (productData?.price || 0) * item.quantity,
                     paymentMethod: values.paymentMethod,
                     date: Timestamp.now(),
-                    localId: (user as any).localId,
+                    localId: user.localId, 
                 });
             }
         });
@@ -125,6 +129,7 @@ export function SalesForm() {
             paymentMethod: "card",
         });
         setTotal(0);
+        router.push('/');
 
     } catch (error: any) {
         toast({
