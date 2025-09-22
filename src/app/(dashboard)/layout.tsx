@@ -47,6 +47,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const { toast } = useToast();
 
+  console.log("DashboardLayout rendering", { user, role, loading });
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/");
@@ -72,6 +74,7 @@ export default function DashboardLayout({
   };
 
   if (loading || !user) {
+    console.log("Loading or no user");
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
         <div className="flex flex-col items-center space-y-4">
