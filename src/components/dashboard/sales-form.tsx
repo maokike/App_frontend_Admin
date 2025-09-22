@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -234,7 +235,7 @@ export function SalesForm() {
             <div className="bg-muted rounded-lg p-6 flex flex-col items-center justify-center space-y-2">
                 <h3 className="text-lg font-medium text-muted-foreground">Total Amount</h3>
                 <p className="text-5xl font-bold font-headline text-primary">
-                    ${total.toFixed(2)}
+                    ${total.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
                 </p>
             </div>
             <Button type="submit" size="lg" className="w-full">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -70,7 +71,7 @@ export function DailySummary() {
                         <CardTitle className="text-sm font-medium">Ingresos de Hoy</CardTitle>
                     </CardHeader>
                     <CardContent>
-                         {loading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>}
+                         {loading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">${totalRevenue.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</div>}
                          <p className="text-xs text-muted-foreground">Total de ingresos generados hoy</p>
                     </CardContent>
                 </Card>
@@ -121,7 +122,7 @@ export function DailySummary() {
                                                 {sale.paymentMethod}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">${sale.total.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">${sale.total.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -136,7 +137,7 @@ export function DailySummary() {
                             <TableFooter>
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-right font-bold text-lg">Total de Hoy</TableCell>
-                                    <TableCell className="text-right font-bold text-lg">${totalRevenue.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-bold text-lg">${totalRevenue.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         )}

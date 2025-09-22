@@ -1,3 +1,4 @@
+
 "use client";
 
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
@@ -68,7 +69,7 @@ export function AdminDashboard() {
             <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${totalRevenue.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</div>
             <p className="text-xs text-muted-foreground">Across all locals</p>
           </CardContent>
         </Card>
