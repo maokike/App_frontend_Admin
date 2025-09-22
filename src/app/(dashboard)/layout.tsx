@@ -112,8 +112,20 @@ export default function DashboardLayout({
     }
   };
 
+  const isAdmin = role === 'admin';
+  const currentViewRole = isAdmin ? simulatedRole : role;
+
+  console.log("🔴 DashboardLayout state:", { 
+    user: !!user, 
+    role, 
+    loading, 
+    isAdmin, 
+    currentViewRole,
+    localName 
+  });
+
   if (loading || !user) {
-    console.log("Loading or no user");
+    console.log("🔴 Showing loading state");
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
         <div className="flex flex-col items-center space-y-4">
@@ -128,8 +140,7 @@ export default function DashboardLayout({
     );
   }
 
-  const isAdmin = role === 'admin';
-  const currentViewRole = isAdmin ? simulatedRole : role;
+  console.log("🟢 Rendering main layout");
 
   return (
     <SidebarProvider>
@@ -240,16 +251,27 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between p-2">
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarFallback>{user?.name?.[0].toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{user?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold">{user?.name}</span>
                 <span className="text-xs text-muted-foreground">{user?.email}</span>
               </div>
             </div>
-            <Button onClick={handleLogout} variant="ghost" size="icon" aria-label="Cerrar sesión">
-                <LogOut className="h-4 w-4" />
-            </Button>
+            <button onClick={handleLogout} className="p-2 rounded-md hover:bg-sidebar-accent">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+          
+          {/* BOTÓN TEMPORAL EN EL FOOTER */}
+          <div className="p-2">
+            <button 
+              onClick={handleLogout}
+              className="w-full bg-red-500 text-white py-2 px-4 rounded flex items-center justify-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar Sesión (Footer)
+            </button>
           </div>
         </SidebarFooter>
       </Sidebar>
