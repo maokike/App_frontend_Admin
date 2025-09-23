@@ -7,19 +7,25 @@ import { LoginForm } from "@/components/auth/login-form";
 import { DollarSign } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function HomePage() {
   const { user, loading, role } = useAuth();
   const router = useRouter();
 
-  // Redirige al usuario a la página de "/login" para manejar la lógica de redirección allí.
   useEffect(() => {
-    if (!loading && user) {
-      router.replace('/login');
+    if (loading) return; // Espera a que termine la carga
+
+    if (user) {
+      if (role === 'admin') {
+        router.replace('/admin-dashboard');
+      } else {
+        router.replace('/local-dashboard');
+      }
     }
-  }, [user, loading, router]);
+    // Si no hay usuario, permanece en esta página para mostrar el formulario de login.
+  }, [user, loading, role, router]);
 
-
-  if (loading || (!loading && user)) {
+  // Muestra un estado de carga mientras se verifica la autenticación.
+  if (loading || user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
         <div className="flex flex-col items-center space-y-4">
