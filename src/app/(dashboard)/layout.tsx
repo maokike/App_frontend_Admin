@@ -29,6 +29,7 @@ import {
   Store,
   Users,
   Warehouse,
+  PlusCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -47,12 +48,16 @@ export default function DashboardLayout({
   const { user, loading, role } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentViewRole, setCurrentViewRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/");
     }
-  }, [user, loading, router]);
+    if (role) {
+      setCurrentViewRole(role);
+    }
+  }, [user, loading, router, role]);
 
   const handleLogout = async () => {
     try {
@@ -69,6 +74,15 @@ export default function DashboardLayout({
         description: "No se pudo cerrar la sesión.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRoleChange = (newRole: UserRole) => {
+    setCurrentViewRole(newRole);
+    if (newRole === 'admin') {
+      router.push('/admin-dashboard');
+    } else {
+      router.push('/local-dashboard');
     }
   };
 
@@ -89,12 +103,11 @@ export default function DashboardLayout({
 
   const isAdmin = role === 'admin';
   const userLocal = user.locales_asignados && user.locales_asignados.length > 0 ? user.locales_asignados[0] : null;
-
+  const localName = currentViewRole === 'local' ? (userLocal?.name || 'Mi Local') : undefined;
 
   console.log("🟢 LAYOUT - User:", user);
   console.log("🟢 LAYOUT - Role:", role);
   console.log("🟢 LAYOUT - isAdmin:", isAdmin);
-
 
   return (
     <SidebarProvider>
@@ -110,42 +123,53 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href={isAdmin ? "/admin-dashboard" : "/local-dashboard"} isActive={router.pathname === (isAdmin ? "/admin-dashboard" : "/local-dashboard")}>
+              <SidebarMenuButton href={currentViewRole === "admin" ? "/admin-dashboard" : "/local-dashboard"}>
                 <Home />
                 <span>Dashboard</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
+            {currentViewRole === 'local' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton href="/local-dashboard">
+                  <PlusCircle />
+                  <span>Nueva Venta</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+
             <SidebarMenuItem>
-              <SidebarMenuButton href="/daily-summary" isActive={router.pathname === "/daily-summary"}>
+              <SidebarMenuButton href="/daily-summary">
                 <Newspaper />
                 <span>Resumen Diario</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/inventory" isActive={router.pathname === "/inventory"}>
+              <SidebarMenuButton href="/inventory">
                 <Warehouse />
                 <span>Inventario</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
             {isAdmin && (
               <SidebarGroup>
                 <SidebarGroupLabel>Admin</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-product" isActive={router.pathname === "/new-product"}>
+                      <SidebarMenuButton href="/new-product">
                         <Package />
                         <span>Productos</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-local" isActive={router.pathname === "/new-local"}>
+                      <SidebarMenuButton href="/new-local">
                         <Store />
                         <span>Locales</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-customer" isActive={router.pathname === "/new-customer"}>
+                      <SidebarMenuButton href="/new-customer">
                         <Users />
                         <span>Clientes</span>
                       </SidebarMenuButton>
@@ -168,7 +192,7 @@ export default function DashboardLayout({
                 <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Cerrar sesión">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -177,18 +201,10 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="flex items-center gap-4 border-b bg-background/90 px-6 py-3 backdrop-blur-sm min-h-[64px]">
           <SidebarTrigger className="md:hidden" />
-          <DashboardHeader
-            currentRole={role || 'local'}
-            onRoleChange={(newRole) => {
-              if (role === 'admin') {
-                if (newRole === 'admin') {
-                  router.push('/admin-dashboard');
-                } else {
-                  router.push('/local-dashboard');
-                }
-              }
-            }}
-            localName={userLocal?.name}
+          <DashboardHeader 
+            currentRole={currentViewRole!} 
+            onRoleChange={handleRoleChange} 
+            localName={localName} 
             isAdmin={isAdmin}
             onLogout={handleLogout}
           />
