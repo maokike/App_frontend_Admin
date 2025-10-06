@@ -214,6 +214,7 @@ export default function DashboardLayout({
             onRoleChange={handleRoleChange} 
             localName={localName} 
             isAdmin={isAdmin}
+            onLogout={handleLogout}
           />
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
