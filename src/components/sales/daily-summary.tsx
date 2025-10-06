@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, Timestamp, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Sale, Product } from "@/lib/types";
+import type { Sale } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ export function DailySummary() {
 
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
 
         const startTimestamp = Timestamp.fromDate(startOfToday);
         const endTimestamp = Timestamp.fromDate(endOfToday);
@@ -44,12 +44,13 @@ export function DailySummary() {
              salesQuery = query(salesCol, 
                 where('localId', '==', user.localId),
                 where('date', '>=', startTimestamp), 
-                where('date', '<=', endTimestamp)
+                where('date', '<', endTimestamp),
+                orderBy('date', 'desc')
              );
         } else if (role === 'admin') {
              salesQuery = query(salesCol,
                 where('date', '>=', startTimestamp), 
-                where('date', '<=', endTimestamp)
+                where('date', '<', endTimestamp)
             );
         } else {
             setDailySales([]);
@@ -63,11 +64,7 @@ export function DailySummary() {
             
             const aggregated: { [key: string]: AggregatedSale } = {};
 
-            // Simplified aggregation logic
             for (const sale of salesData) {
-                const totalQuantityInSale = sale.products.reduce((acc, p) => acc + p.quantity, 0);
-                if (totalQuantityInSale === 0) continue;
-
                 for (const item of sale.products) {
                     if (!aggregated[item.productId]) {
                         aggregated[item.productId] = {
@@ -78,18 +75,17 @@ export function DailySummary() {
                             paymentMethods: {},
                         };
                     }
+                    
+                    const itemProportionalTotal = sale.products.length > 0 ? (sale.total / sale.products.reduce((acc, p) => acc + p.quantity, 0)) * item.quantity : 0;
 
-                    // Accumulate quantity and a proportional part of the total
-                    const itemProportionalTotal = (sale.total / totalQuantityInSale) * item.quantity;
                     aggregated[item.productId].quantity += item.quantity;
                     aggregated[item.productId].total += itemProportionalTotal;
 
-                    // Accumulate payment methods count
                     const paymentMethod = sale.paymentMethod;
                     if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
                         aggregated[item.productId].paymentMethods[paymentMethod] = 0;
                     }
-                    aggregated[item.productId].paymentMethods[paymentMethod] += item.quantity;
+                    aggregated[item.productId].paymentMethods[paymentMethod] += 1;
                 }
             }
 
