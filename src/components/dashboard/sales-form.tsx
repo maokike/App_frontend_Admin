@@ -153,7 +153,7 @@ export function SalesForm() {
         };
 
         const salesCollectionRef = collection(db, "sales");
-        batch.set(doc(salesCollectionRef), saleData);
+        await addDoc(salesCollectionRef, saleData);
 
         await batch.commit();
 
