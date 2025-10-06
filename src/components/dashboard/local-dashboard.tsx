@@ -56,10 +56,6 @@ export function LocalDashboard() {
                     <CardTitle className="font-headline">Quick Sale</CardTitle>
                     <CardDescription>Record a new sale quickly and efficiently.</CardDescription>
                 </div>
-                <Button variant="outline" onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Cerrar Sesión
-                </Button>
             </div>
         </CardHeader>
         <CardContent>
