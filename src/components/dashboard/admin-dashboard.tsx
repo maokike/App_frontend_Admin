@@ -126,6 +126,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         </CardContent>
       </Card>
 
+      {onLogout && (
+        <div className="flex justify-start">
+            <Button variant="outline" onClick={onLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+            </Button>
+        </div>
+      )}
     </div>
   );
 }
