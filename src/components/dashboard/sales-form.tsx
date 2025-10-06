@@ -87,58 +87,69 @@ export function SalesForm() {
         return;
     }
 
+    const batch = writeBatch(db);
+
     try {
-        await runTransaction(db, async (transaction) => {
-            const productRefs: { ref: DocumentReference<DocumentData>; item: z.infer<typeof saleItemSchema> }[] = [];
-            const salesCollectionRef = collection(db, "sales");
+        const productsToUpdate: { ref: DocumentReference, newStock: number }[] = [];
+        let insufficientStock = false;
 
-            // 1. READ PHASE: Get all product documents and check stock
-            const productsToUpdate = [];
-            for (const item of values.products) {
-                const productRef = doc(db, "products", item.productId);
-                const productDoc = await transaction.get(productRef);
+        // First, check for stock availability
+        for (const item of values.products) {
+            const productRef = doc(db, "products", item.productId);
+            const productDoc = await getDoc(productRef);
 
-                if (!productDoc.exists()) {
-                    throw new Error(`Producto ${item.productId} no encontrado!`);
-                }
-
-                const productData = productDoc.data();
-                const newStock = (productData.stock || 0) - item.quantity;
-                if (newStock < 0) {
-                    throw new Error(`No hay suficiente stock para ${productData.name}.`);
-                }
-                
-                productsToUpdate.push({ ref: productRef, newStock, item, productData });
+            if (!productDoc.exists()) {
+                throw new Error(`Producto ${item.productId} no encontrado!`);
             }
-
-            // 2. WRITE PHASE: Update stock and create sale documents
-            for (const { ref, newStock, item, productData } of productsToUpdate) {
-                // Update product stock
-                transaction.update(ref, { stock: newStock });
-
-                // Create sale document
-                const saleDocRef = doc(salesCollectionRef);
-                transaction.set(saleDocRef, {
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    total: (productData.price || 0) * item.quantity,
-                    paymentMethod: values.paymentMethod,
-                    date: Timestamp.now(),
-                    localId: user.localId, 
+            
+            const productData = productDoc.data();
+            const currentStock = productData.stock || 0;
+            const newStock = currentStock - item.quantity;
+            
+            if (newStock < 0) {
+                toast({
+                    title: "Error de Stock",
+                    description: `No hay suficiente stock para ${productData.name}. Stock actual: ${currentStock}.`,
+                    variant: "destructive",
                 });
+                insufficientStock = true;
+                break; // Stop processing if any product is out of stock
             }
+            productsToUpdate.push({ ref: productRef, newStock });
+        }
+
+        if (insufficientStock) {
+            return; // Abort submission
+        }
+
+        // If all products have enough stock, proceed with the batch write
+        productsToUpdate.forEach(({ ref, newStock }) => {
+            batch.update(ref, { stock: newStock });
         });
+
+        const saleData = {
+            products: values.products,
+            total,
+            paymentMethod: values.paymentMethod,
+            date: Timestamp.now(),
+            localId: user.localId, 
+        };
+
+        const salesCollectionRef = collection(db, "sales");
+        batch.set(doc(salesCollectionRef), saleData);
+
+        await batch.commit();
 
         toast({
             title: "Venta Registrada!",
-            description: `Venta registrada exitosamente.`,
+            description: `Venta de $${total.toLocaleString('es-AR', { maximumFractionDigits: 0 })} registrada exitosamente.`,
         });
         form.reset({
             products: [{ productId: "", quantity: 1 }],
             paymentMethod: "card",
         });
         setTotal(0);
-        router.push('/');
+        router.push('/local-dashboard');
 
     } catch (error: any) {
         toast({

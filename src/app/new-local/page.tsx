@@ -63,6 +63,9 @@ export default function NewLocalPage() {
             await runTransaction(db, async (transaction) => {
                 const localRef = doc(db, "locals", updatedLocal.id);
                 const originalLocalDoc = await transaction.get(localRef);
+                if (!originalLocalDoc.exists()) {
+                    throw new Error("Local no encontrado");
+                }
                 const originalLocalData = originalLocalDoc.data() as Local;
 
                 // If user assignment has changed
@@ -79,6 +82,21 @@ export default function NewLocalPage() {
                     const newAssignment: LocalAssignment = { localId: updatedLocal.id, name: updatedLocal.name };
                     transaction.update(newUserRef, { locales_asignados: arrayUnion(newAssignment) });
                 }
+                 // Handle name change affecting assignments
+                if (originalLocalData.name !== updatedLocal.name) {
+                    // If the user hasn't changed, update the existing assignment name
+                    if (originalLocalData.userId === updatedLocal.userId && originalLocalData.userId) {
+                        const userRef = doc(db, "Usuarios", originalLocalData.userId);
+                        const oldAssignment: LocalAssignment = { localId: originalLocalData.id, name: originalLocalData.name };
+                        const newAssignment: LocalAssignment = { localId: updatedLocal.id, name: updatedLocal.name };
+                        transaction.update(userRef, { 
+                            locales_asignados: arrayRemove(oldAssignment)
+                        });
+                         transaction.update(userRef, { 
+                            locales_asignados: arrayUnion(newAssignment)
+                        });
+                    }
+                }
 
                 transaction.update(localRef, { ...updatedLocal });
             });
@@ -94,7 +112,7 @@ export default function NewLocalPage() {
        }
     };
 
-    const handleLocalDeleted = async (localId: string, userId: string) => {
+    const handleLocalDeleted = async (localId: string) => {
         try {
              await runTransaction(db, async (transaction) => {
                 const localRef = doc(db, "locals", localId);
@@ -104,8 +122,8 @@ export default function NewLocalPage() {
 
                 transaction.delete(localRef);
 
-                if (userId) {
-                    const userRef = doc(db, "Usuarios", userId);
+                if (localData.userId) {
+                    const userRef = doc(db, "Usuarios", localData.userId);
                     const assignmentToRemove: LocalAssignment = { localId: localId, name: localData.name };
                     transaction.update(userRef, { locales_asignados: arrayRemove(assignmentToRemove) });
                 }

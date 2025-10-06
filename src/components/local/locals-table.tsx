@@ -26,7 +26,7 @@ interface LocalsTableProps {
     locals: Local[];
     loading: boolean;
     onLocalUpdated: (local: Local) => void;
-    onLocalDeleted: (localId: string, userId: string) => void;
+    onLocalDeleted: (localId: string) => void;
 }
 
 export function LocalsTable({ locals, loading, onLocalUpdated, onLocalDeleted }: LocalsTableProps) {
@@ -51,19 +51,13 @@ export function LocalsTable({ locals, loading, onLocalUpdated, onLocalDeleted }:
     };
 
     const handleDeleteInForm = (localId: string) => {
-        const local = locals.find(l => l.id === localId);
-        if (local) {
-            onLocalDeleted(local.id, local.userId);
-        }
+        onLocalDeleted(localId);
         setIsSheetOpen(false);
         setSelectedLocal(null);
     }
     
     const handleDeleteInDialog = (localId: string) => {
-        const local = locals.find(l => l.id === localId);
-        if (local) {
-            onLocalDeleted(local.id, local.userId);
-        }
+        onLocalDeleted(localId);
     };
 
     const getUserName = (userId: string) => {
