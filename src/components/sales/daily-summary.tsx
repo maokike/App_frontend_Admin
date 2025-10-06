@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, Timestamp, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Sale, User } from "@/lib/types";
+import type { Sale, Product } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -24,17 +24,31 @@ export function DailySummary() {
     const [dailySales, setDailySales] = useState<AggregatedSale[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalTransactions, setTotalTransactions] = useState(0);
+    const [products, setProducts] = useState<Product[]>([]);
+
+     useEffect(() => {
+        const fetchProducts = async () => {
+            const productsCollection = collection(db, "products");
+            const productSnapshot = await getDocs(productsCollection);
+            const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+            setProducts(productList);
+        };
+        fetchProducts();
+    }, []);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || products.length === 0) return;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const now = new Date();
+        const utcYear = now.getUTCFullYear();
+        const utcMonth = now.getUTCMonth();
+        const utcDate = now.getUTCDate();
 
-        const startOfToday = Timestamp.fromDate(today);
-        const startOfTomorrow = Timestamp.fromDate(tomorrow);
+        const utcDayStart = new Date(Date.UTC(utcYear, utcMonth, utcDate, 0, 0, 0));
+        const utcNextDay = new Date(Date.UTC(utcYear, utcMonth, utcDate + 1, 0, 0, 0));
+
+        const startOfToday = Timestamp.fromDate(utcDayStart);
+        const startOfTomorrow = Timestamp.fromDate(utcNextDay);
 
         const salesCol = collection(db, "sales");
         
@@ -43,7 +57,7 @@ export function DailySummary() {
         if (role === 'local' && user.localId) {
              salesQuery = query(salesCol, 
                 where('date', '>=', startOfToday), 
-                where('date', '<', startOfTomorrow), 
+                where('date', '<', startOfTomorrow),
                 where('localId', '==', user.localId)
              );
         } else if (role === 'admin') {
@@ -59,7 +73,6 @@ export function DailySummary() {
 
         const unsubscribe = onSnapshot(salesQuery, (snapshot) => {
             setTotalTransactions(snapshot.size);
-
             const salesData = snapshot.docs.map(doc => doc.data() as Sale);
             
             const aggregated: { [key: string]: AggregatedSale } = {};
@@ -97,12 +110,9 @@ export function DailySummary() {
             setLoading(false);
         });
 
-        // Dummy product list to resolve dependency, will be removed.
-        const products: any[] = [];
-
         return () => unsubscribe();
 
-    }, [user, role]);
+    }, [user, role, products]);
 
     const totalRevenue = dailySales.reduce((sum, sale) => sum + sale.total, 0);
     const totalItemsSold = dailySales.reduce((sum, sale) => sum + sale.quantity, 0);
