@@ -88,7 +88,7 @@ export function InventoryView() {
                                         return (
                                         <TableRow key={product.id}>
                                             <TableCell className="font-medium">{product.name}</TableCell>
-                                            <TableCell className="text-center">${product.price.toFixed(2)}</TableCell>
+                                            <TableCell className="text-center">${Number(product.price).toFixed(2)}</TableCell>
                                             <TableCell className="text-center">{product.stock || 0}</TableCell>
                                             <TableCell>
                                                 <Progress value={stockLevel} className="w-full" />

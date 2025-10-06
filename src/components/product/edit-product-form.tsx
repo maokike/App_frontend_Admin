@@ -49,7 +49,12 @@ export function EditProductForm({ product, onSave, onDelete }: EditProductFormPr
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const updatedProduct = { ...product, ...values };
+    const updatedProduct = { 
+      ...product, 
+      ...values,
+      price: Number(values.price),
+      stock: Number(values.stock),
+    };
     onSave(updatedProduct);
     toast({
       title: "Producto Actualizado",

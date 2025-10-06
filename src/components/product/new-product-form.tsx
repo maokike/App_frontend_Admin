@@ -34,7 +34,13 @@ export function NewProductForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await addDoc(collection(db, "products"), values);
+      // Ensure values are numbers before sending to Firestore
+      const dataToSave = {
+        ...values,
+        price: Number(values.price),
+        stock: Number(values.stock),
+      };
+      await addDoc(collection(db, "products"), dataToSave);
       toast({
         title: "Producto Creado",
         description: `El producto ${values.name} ha sido añadido.`,
