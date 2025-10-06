@@ -40,15 +40,11 @@ export function DailySummary() {
         if (!user || products.length === 0) return;
 
         const now = new Date();
-        const utcYear = now.getUTCFullYear();
-        const utcMonth = now.getUTCMonth();
-        const utcDate = now.getUTCDate();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
 
-        const utcDayStart = new Date(Date.UTC(utcYear, utcMonth, utcDate, 0, 0, 0));
-        const utcNextDay = new Date(Date.UTC(utcYear, utcMonth, utcDate + 1, 0, 0, 0));
-
-        const startOfToday = Timestamp.fromDate(utcDayStart);
-        const startOfTomorrow = Timestamp.fromDate(utcNextDay);
+        const startTimestamp = Timestamp.fromDate(startOfToday);
+        const endTimestamp = Timestamp.fromDate(startOfTomorrow);
 
         const salesCol = collection(db, "sales");
         
@@ -56,14 +52,14 @@ export function DailySummary() {
         
         if (role === 'local' && user.localId) {
              salesQuery = query(salesCol, 
-                where('date', '>=', startOfToday), 
-                where('date', '<', startOfTomorrow),
+                where('date', '>=', startTimestamp), 
+                where('date', '<', endTimestamp),
                 where('localId', '==', user.localId)
              );
         } else if (role === 'admin') {
              salesQuery = query(salesCol, 
-                where('date', '>=', startOfToday), 
-                where('date', '<', startOfTomorrow)
+                where('date', '>=', startTimestamp), 
+                where('date', '<', endTimestamp)
             );
         } else {
             setLoading(false);
