@@ -143,7 +143,11 @@ export function SalesForm() {
             batch.update(ref, { stock: newStock });
         });
 
+        // Generate custom sale ID
+        const saleId = `VENTA_${Date.now()}`;
+
         const saleData = {
+            saleId: saleId,
             products: values.products,
             total,
             paymentMethod: values.paymentMethod,
@@ -159,7 +163,7 @@ export function SalesForm() {
 
         toast({
             title: "Venta Registrada!",
-            description: `Venta de $${total.toLocaleString('es-AR', { maximumFractionDigits: 0 })} registrada exitosamente.`,
+            description: `Venta ${saleId} de $${total.toLocaleString('es-AR', { maximumFractionDigits: 0 })} registrada.`,
         });
         form.reset({
             products: [{ productId: "", quantity: 1 }],
@@ -312,3 +316,5 @@ export function SalesForm() {
     </Form>
   );
 }
+
+    

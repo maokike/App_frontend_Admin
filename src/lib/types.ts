@@ -30,6 +30,7 @@ export type PaymentMethod = 'cash' | 'card';
 
 export type Sale = {
   id: string;
+  saleId: string;
   products: { productId: string; quantity: number }[];
   total: number;
   paymentMethod: PaymentMethod;
@@ -47,4 +48,5 @@ export type Local = {
     userId: string;
 };
 
+    
     
