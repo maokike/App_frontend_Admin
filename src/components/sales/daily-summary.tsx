@@ -4,18 +4,26 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot, getDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Sale, Product } from "@/lib/types";
+import type { Sale, Product, User } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 
+interface AggregatedSale {
+    productId: string;
+    productName: string;
+    quantity: number;
+    total: number;
+    paymentMethods: { [key: string]: number };
+}
 
 export function DailySummary() {
     const { user, role } = useAuth();
-    const [dailySales, setDailySales] = useState<(Sale & { productName: string })[]>([]);
+    const [dailySales, setDailySales] = useState<AggregatedSale[]>([]);
     const [loading, setLoading] = useState(true);
+    const [totalTransactions, setTotalTransactions] = useState(0);
 
     useEffect(() => {
         if (!user) return;
@@ -28,22 +36,51 @@ export function DailySummary() {
         const salesCol = collection(db, "sales");
         
         let salesQuery = query(salesCol, where('date', '>=', Timestamp.fromDate(today)), where('date', '<', Timestamp.fromDate(tomorrow)));
-
-        // If user is local, only show their sales
-        if (role === 'local' && (user as any).localId) {
-             salesQuery = query(salesCol, where('date', '>=', Timestamp.fromDate(today)), where('date', '<', Timestamp.fromDate(tomorrow)), where('localId', '==', (user as any).localId));
+        
+        if (role === 'local' && (user as User).localId) {
+             salesQuery = query(salesCol, 
+                where('date', '>=', Timestamp.fromDate(today)), 
+                where('date', '<', Timestamp.fromDate(tomorrow)), 
+                where('localId', '==', (user as User).localId)
+             );
         }
 
         const unsubscribe = onSnapshot(salesQuery, async (snapshot) => {
-            const salesPromises = snapshot.docs.map(async saleDoc => {
-                const saleData = saleDoc.data() as Sale;
-                const productRef = doc(db, "products", saleData.productId);
-                const productSnap = await getDoc(productRef);
-                const productName = productSnap.exists() ? (productSnap.data() as Product).name : 'N/A';
-                return { ...saleData, id: saleDoc.id, productName };
-            });
-            const resolvedSales = await Promise.all(salesPromises);
-            setDailySales(resolvedSales);
+            setTotalTransactions(snapshot.size);
+
+            const salesData = snapshot.docs.map(doc => doc.data() as Sale);
+            
+            const aggregated: { [key: string]: AggregatedSale } = {};
+
+            for (const sale of salesData) {
+                for (const item of sale.products) {
+                    const productRef = doc(db, "products", item.productId);
+                    const productSnap = await getDoc(productRef);
+                    const productName = productSnap.exists() ? (productSnap.data() as Product).name : 'Producto Desconocido';
+                    const productPrice = productSnap.exists() ? (productSnap.data() as Product).price : 0;
+                    
+                    if (!aggregated[item.productId]) {
+                        aggregated[item.productId] = {
+                            productId: item.productId,
+                            productName: productName,
+                            quantity: 0,
+                            total: 0,
+                            paymentMethods: {},
+                        };
+                    }
+                    
+                    aggregated[item.productId].quantity += item.quantity;
+                    aggregated[item.productId].total += item.quantity * productPrice;
+                    
+                    const paymentMethod = sale.paymentMethod;
+                    if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
+                        aggregated[item.productId].paymentMethods[paymentMethod] = 0;
+                    }
+                    aggregated[item.productId].paymentMethods[paymentMethod]++;
+                }
+            }
+
+            setDailySales(Object.values(aggregated));
             setLoading(false);
         });
 
@@ -62,7 +99,7 @@ export function DailySummary() {
                         <CardTitle className="text-sm font-medium">Ventas de Hoy</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {loading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{dailySales.length}</div>}
+                        {loading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{totalTransactions}</div>}
                         <p className="text-xs text-muted-foreground">Transacciones totales hoy</p>
                     </CardContent>
                 </Card>
@@ -89,7 +126,7 @@ export function DailySummary() {
                 <CardHeader>
                     <CardTitle className="font-headline">Resumen de Ventas Diarias</CardTitle>
                     <CardDescription>
-                        Mostrando todas las ventas registradas hoy, {new Date().toLocaleDateString()}.
+                        Mostrando un resumen de productos vendidos hoy, {new Date().toLocaleDateString()}.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -98,7 +135,7 @@ export function DailySummary() {
                             <TableRow>
                                 <TableHead>Producto</TableHead>
                                 <TableHead className="text-center">Cantidad</TableHead>
-                                <TableHead className="text-center">Método de Pago</TableHead>
+                                <TableHead className="text-center">Métodos de Pago</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -114,13 +151,15 @@ export function DailySummary() {
                                 ))
                             ) : dailySales.length > 0 ? (
                                 dailySales.map(sale => (
-                                    <TableRow key={sale.id}>
+                                    <TableRow key={sale.productId}>
                                         <TableCell className="font-medium">{sale.productName}</TableCell>
                                         <TableCell className="text-center">{sale.quantity}</TableCell>
-                                        <TableCell className="text-center">
-                                            <Badge variant={sale.paymentMethod === 'card' ? 'default' : 'secondary'} className="capitalize">
-                                                {sale.paymentMethod}
-                                            </Badge>
+                                        <TableCell className="text-center flex flex-wrap justify-center items-center gap-1">
+                                            {Object.entries(sale.paymentMethods).map(([method, count]) => (
+                                                <Badge key={method} variant={method === 'card' ? 'default' : 'secondary'} className="capitalize">
+                                                    {method} ({count})
+                                                </Badge>
+                                            ))}
                                         </TableCell>
                                         <TableCell className="text-right">${sale.total.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</TableCell>
                                     </TableRow>
@@ -147,3 +186,5 @@ export function DailySummary() {
         </div>
     );
 }
+
+    
