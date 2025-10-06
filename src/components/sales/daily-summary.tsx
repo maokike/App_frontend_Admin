@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -64,14 +63,12 @@ export function DailySummary() {
             
             const aggregated: { [key: string]: AggregatedSale } = {};
 
+            // Simplified aggregation logic
             for (const sale of salesData) {
+                const totalQuantityInSale = sale.products.reduce((acc, p) => acc + p.quantity, 0);
+                if (totalQuantityInSale === 0) continue;
+
                 for (const item of sale.products) {
-                    // This is an approximation of price per item for the total.
-                    const pricePerUnit = sale.products.reduce((acc, p) => acc + p.quantity, 0) > 0 
-                        ? sale.total / sale.products.reduce((acc, p) => acc + p.quantity, 0) 
-                        : 0;
-                    const itemTotal = pricePerUnit * item.quantity;
-                    
                     if (!aggregated[item.productId]) {
                         aggregated[item.productId] = {
                             productId: item.productId,
@@ -81,16 +78,17 @@ export function DailySummary() {
                             paymentMethods: {},
                         };
                     }
-                    
+
+                    // Accumulate quantity and a proportional part of the total
+                    const itemProportionalTotal = (sale.total / totalQuantityInSale) * item.quantity;
                     aggregated[item.productId].quantity += item.quantity;
-                    aggregated[item.productId].total += itemTotal;
-                    
+                    aggregated[item.productId].total += itemProportionalTotal;
+
+                    // Accumulate payment methods count
                     const paymentMethod = sale.paymentMethod;
                     if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
                         aggregated[item.productId].paymentMethods[paymentMethod] = 0;
                     }
-                    // This logic is also an approximation, it credits the payment method to the product quantity.
-                    // For more accurate tracking, you might need a different data structure.
                     aggregated[item.productId].paymentMethods[paymentMethod] += item.quantity;
                 }
             }
