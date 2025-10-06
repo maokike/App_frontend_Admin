@@ -111,7 +111,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               label: "Total",
               color: "hsl(var(--primary))",
             },
-          }} className="h-[300px] w-full">
+          }} className="h-[250px] w-full">
             <BarChart data={monthlySales} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
