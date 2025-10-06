@@ -28,10 +28,16 @@ export type Product = {
 
 export type PaymentMethod = 'cash' | 'card';
 
+export interface SaleProduct {
+  productId: string;
+  productName: string;
+  quantity: number;
+}
+
 export type Sale = {
   id: string;
   saleId: string;
-  products: { productId: string; quantity: number }[];
+  products: SaleProduct[];
   total: number;
   paymentMethod: PaymentMethod;
   date: Timestamp | Date;
@@ -47,6 +53,3 @@ export type Local = {
     phone?: string;
     userId: string;
 };
-
-    
-    

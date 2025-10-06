@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Landmark, PlusCircle, Trash2, FileImage } from "lucide-react";
 import { collection, getDocs, addDoc, Timestamp, writeBatch, doc, getDoc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Product } from "@/lib/types";
+import type { Product, SaleProduct } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 
@@ -109,6 +109,7 @@ export function SalesForm() {
     try {
         const productsToUpdate: { ref: DocumentReference, newStock: number }[] = [];
         let insufficientStock = false;
+        const saleProductsWithNames: SaleProduct[] = [];
 
         for (const item of values.products) {
             const productRef = doc(db, "products", item.productId);
@@ -133,6 +134,12 @@ export function SalesForm() {
             
             const newStock = currentStock - item.quantity;
             productsToUpdate.push({ ref: productRef, newStock });
+            
+            saleProductsWithNames.push({
+                productId: item.productId,
+                productName: productData.name,
+                quantity: item.quantity,
+            });
         }
 
         if (insufficientStock) {
@@ -148,7 +155,7 @@ export function SalesForm() {
 
         const saleData = {
             saleId: saleId,
-            products: values.products,
+            products: saleProductsWithNames,
             total,
             paymentMethod: values.paymentMethod,
             date: Timestamp.now(),
@@ -316,5 +323,3 @@ export function SalesForm() {
     </Form>
   );
 }
-
-    
