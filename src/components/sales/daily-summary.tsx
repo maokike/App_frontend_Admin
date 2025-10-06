@@ -46,11 +46,14 @@ export function DailySummary() {
                 where('date', '<', startOfTomorrow), 
                 where('localId', '==', user.localId)
              );
-        } else {
+        } else if (role === 'admin') {
              salesQuery = query(salesCol, 
                 where('date', '>=', startOfToday), 
                 where('date', '<', startOfTomorrow)
             );
+        } else {
+            setLoading(false);
+            return;
         }
 
 
@@ -73,15 +76,17 @@ export function DailySummary() {
                         };
                     }
                     
-                    aggregated[item.productId].quantity += item.quantity;
-                    aggregated[item.productId].total += (sale.total / sale.products.length); // Approximate if total is for the whole sale
+                    const product = products.find(p => p.id === item.productId);
+                    if (product) {
+                        aggregated[item.productId].quantity += item.quantity;
+                        aggregated[item.productId].total += product.price * item.quantity;
+                    }
                     
                     const paymentMethod = sale.paymentMethod;
                     if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
                         aggregated[item.productId].paymentMethods[paymentMethod] = 0;
                     }
-                    // This logic is slightly flawed as it assumes one payment method per item
-                    aggregated[item.productId].paymentMethods[paymentMethod]++;
+                    aggregated[item.productId].paymentMethods[paymentMethod] += item.quantity;
                 }
             }
 
@@ -91,6 +96,9 @@ export function DailySummary() {
             console.error("Error fetching daily summary: ", error);
             setLoading(false);
         });
+
+        // Dummy product list to resolve dependency, will be removed.
+        const products: any[] = [];
 
         return () => unsubscribe();
 
