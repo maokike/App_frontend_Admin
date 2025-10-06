@@ -5,12 +5,13 @@ import { SalesForm } from "./sales-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, LogOut } from "lucide-react";
+import { AlertTriangle, LogOut, Newspaper, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function LocalDashboard() {
   const { user, role } = useAuth();
@@ -63,6 +64,27 @@ export function LocalDashboard() {
         </CardHeader>
         <CardContent>
           <SalesForm />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="font-headline">Acciones Rápidas</CardTitle>
+            <CardDescription>Navega a otras secciones importantes de la aplicación.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-4">
+            <Button asChild className="w-full">
+                <Link href="/daily-summary">
+                    <Newspaper className="mr-2 h-4 w-4" />
+                    Resumen de Venta del Día
+                </Link>
+            </Button>
+            <Button asChild className="w-full" variant="secondary">
+                <Link href="/inventory">
+                    <Warehouse className="mr-2 h-4 w-4" />
+                    Ver Inventario
+                </Link>
+            </Button>
         </CardContent>
       </Card>
     </div>
