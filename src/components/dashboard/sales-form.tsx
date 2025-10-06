@@ -118,11 +118,10 @@ export function SalesForm() {
                 throw new Error(`Producto ${item.productId} no encontrado!`);
             }
             
-            const productData = productDoc.data();
+            const productData = productDoc.data() as Product;
             const currentStock = productData.stock || 0;
-            const newStock = currentStock - item.quantity;
             
-            if (newStock < 0) {
+            if (item.quantity > currentStock) {
                 toast({
                     title: "Error de Stock",
                     description: `No hay suficiente stock para ${productData.name}. Stock actual: ${currentStock}.`,
@@ -131,6 +130,8 @@ export function SalesForm() {
                 insufficientStock = true;
                 break;
             }
+            
+            const newStock = currentStock - item.quantity;
             productsToUpdate.push({ ref: productRef, newStock });
         }
 
@@ -199,7 +200,7 @@ export function SalesForm() {
                         <SelectContent>
                           {products.map(product => (
                             <SelectItem key={product.id} value={product.id}>
-                              {product.name} - ${product.price.toLocaleString('es-AR', { maximumFractionDigits: 0})}
+                              {product.name} (Stock: {product.stock || 0}) - ${product.price.toLocaleString('es-AR', { maximumFractionDigits: 0})}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -311,5 +312,3 @@ export function SalesForm() {
     </Form>
   );
 }
-
-    
