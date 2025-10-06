@@ -53,6 +53,7 @@ export function DailySummary() {
                 where('date', '<=', endTimestamp)
             );
         } else {
+            setDailySales([]);
             setLoading(false);
             return;
         }
@@ -65,7 +66,11 @@ export function DailySummary() {
 
             for (const sale of salesData) {
                 for (const item of sale.products) {
-                    const productPrice = sale.total / sale.products.reduce((acc, p) => acc + p.quantity, 0) * item.quantity;
+                    // This is an approximation of price per item for the total.
+                    const pricePerUnit = sale.products.reduce((acc, p) => acc + p.quantity, 0) > 0 
+                        ? sale.total / sale.products.reduce((acc, p) => acc + p.quantity, 0) 
+                        : 0;
+                    const itemTotal = pricePerUnit * item.quantity;
                     
                     if (!aggregated[item.productId]) {
                         aggregated[item.productId] = {
@@ -78,12 +83,14 @@ export function DailySummary() {
                     }
                     
                     aggregated[item.productId].quantity += item.quantity;
-                    aggregated[item.productId].total += productPrice; // Approximate, assumes uniform price
+                    aggregated[item.productId].total += itemTotal;
                     
                     const paymentMethod = sale.paymentMethod;
                     if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
                         aggregated[item.productId].paymentMethods[paymentMethod] = 0;
                     }
+                    // This logic is also an approximation, it credits the payment method to the product quantity.
+                    // For more accurate tracking, you might need a different data structure.
                     aggregated[item.productId].paymentMethods[paymentMethod] += item.quantity;
                 }
             }
@@ -137,7 +144,7 @@ export function DailySummary() {
                 <CardHeader>
                     <CardTitle className="font-headline">Resumen de Ventas Diarias</CardTitle>
                     <CardDescription>
-                        Mostrando un resumen de productos vendidos hoy, {new Date().toLocaleDateString()}.
+                        Mostrando un resumen de productos vendidos hoy, {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -196,3 +203,4 @@ export function DailySummary() {
             </Card>
         </div>
     );
+}
