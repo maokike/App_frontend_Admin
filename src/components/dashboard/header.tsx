@@ -4,15 +4,12 @@
 import type { UserRole } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 
 interface DashboardHeaderProps {
   currentRole: UserRole;
   onRoleChange: (role: UserRole) => void;
   localName?: string;
   isAdmin: boolean;
-  onLogout: () => void;
 }
 
 export function DashboardHeader({ 
@@ -20,7 +17,6 @@ export function DashboardHeader({
   onRoleChange, 
   localName, 
   isAdmin, 
-  onLogout 
 }: DashboardHeaderProps) { 
   
   console.log("🔴 HEADER - Props recibidas:", { 
@@ -55,10 +51,6 @@ export function DashboardHeader({
             </Select>
           </div>
         )}
-        <Button variant="outline" size="sm" onClick={onLogout} className="hidden sm:inline-flex">
-          <LogOut className="mr-2 h-4 w-4" />
-          Cerrar Sesión
-        </Button>
       </div>
     </div>
   );

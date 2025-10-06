@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Children, cloneElement, isValidElement } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -76,6 +76,14 @@ export default function DashboardLayout({
       });
     }
   };
+
+  const childrenWithProps = Children.map(children, child => {
+    if (isValidElement(child)) {
+      // @ts-ignore
+      return cloneElement(child, { onLogout: handleLogout });
+    }
+    return child;
+  });
 
   const handleRoleChange = (newRole: UserRole) => {
     setCurrentViewRole(newRole);
@@ -206,11 +214,10 @@ export default function DashboardLayout({
             onRoleChange={handleRoleChange} 
             localName={localName} 
             isAdmin={isAdmin}
-            onLogout={handleLogout}
           />
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
-          {children}
+          {childrenWithProps}
         </main>
       </SidebarInset>
     </SidebarProvider>

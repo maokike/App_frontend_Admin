@@ -4,18 +4,23 @@
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { CircleDollarSign, ShoppingCart, Users } from "lucide-react";
+import { CircleDollarSign, LogOut, ShoppingCart, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, getDocs, onSnapshot, query, where, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Sale } from "@/lib/types";
+import { Button } from "../ui/button";
 
 interface MonthlySale {
   month: string;
   total: number;
 }
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  onLogout?: () => void;
+}
+
+export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
   const [newCustomers, setNewCustomers] = useState(0); // Assuming this is calculated elsewhere for now
@@ -120,6 +125,15 @@ export function AdminDashboard() {
           </ChartContainer>
         </CardContent>
       </Card>
+
+      {onLogout && (
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" onClick={onLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Cerrar Sesión
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

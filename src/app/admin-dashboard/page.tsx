@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
@@ -5,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function AdminDashboardPage() {
+export default function AdminDashboardPage({ onLogout }: { onLogout?: () => void }) {
     const { role, loading } = useAuth();
     const router = useRouter();
 
@@ -20,5 +21,5 @@ export default function AdminDashboardPage() {
       return <div>Loading or Access Denied...</div>;
     }
     
-    return <AdminDashboard />;
+    return <AdminDashboard onLogout={onLogout} />;
 }
