@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, Timestamp, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Sale, Product } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,20 +24,12 @@ export function DailySummary() {
     const [dailySales, setDailySales] = useState<AggregatedSale[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalTransactions, setTotalTransactions] = useState(0);
-    const [products, setProducts] = useState<Product[]>([]);
-
-     useEffect(() => {
-        const fetchProducts = async () => {
-            const productsCollection = collection(db, "products");
-            const productSnapshot = await getDocs(productsCollection);
-            const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-            setProducts(productList);
-        };
-        fetchProducts();
-    }, []);
 
     useEffect(() => {
-        if (!user || products.length === 0) return;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
 
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -46,18 +38,17 @@ export function DailySummary() {
         const startTimestamp = Timestamp.fromDate(startOfToday);
         const endTimestamp = Timestamp.fromDate(endOfToday);
 
-        const salesCol = collection(db, "sales");
-        
         let salesQuery;
-        
+        const salesCol = collection(db, "sales");
+
         if (role === 'local' && user.localId) {
              salesQuery = query(salesCol, 
+                where('localId', '==', user.localId),
                 where('date', '>=', startTimestamp), 
-                where('date', '<=', endTimestamp),
-                where('localId', '==', user.localId)
+                where('date', '<=', endTimestamp)
              );
         } else if (role === 'admin') {
-             salesQuery = query(salesCol, 
+             salesQuery = query(salesCol,
                 where('date', '>=', startTimestamp), 
                 where('date', '<=', endTimestamp)
             );
@@ -65,7 +56,6 @@ export function DailySummary() {
             setLoading(false);
             return;
         }
-
 
         const unsubscribe = onSnapshot(salesQuery, (snapshot) => {
             setTotalTransactions(snapshot.size);
@@ -75,6 +65,8 @@ export function DailySummary() {
 
             for (const sale of salesData) {
                 for (const item of sale.products) {
+                    const productPrice = sale.total / sale.products.reduce((acc, p) => acc + p.quantity, 0) * item.quantity;
+                    
                     if (!aggregated[item.productId]) {
                         aggregated[item.productId] = {
                             productId: item.productId,
@@ -85,11 +77,8 @@ export function DailySummary() {
                         };
                     }
                     
-                    const product = products.find(p => p.id === item.productId);
-                    if (product) {
-                        aggregated[item.productId].quantity += item.quantity;
-                        aggregated[item.productId].total += product.price * item.quantity;
-                    }
+                    aggregated[item.productId].quantity += item.quantity;
+                    aggregated[item.productId].total += productPrice; // Approximate, assumes uniform price
                     
                     const paymentMethod = sale.paymentMethod;
                     if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
@@ -108,7 +97,7 @@ export function DailySummary() {
 
         return () => unsubscribe();
 
-    }, [user, role, products]);
+    }, [user, role]);
 
     const totalRevenue = dailySales.reduce((sum, sale) => sum + sale.total, 0);
     const totalItemsSold = dailySales.reduce((sum, sale) => sum + sale.quantity, 0);
@@ -207,5 +196,3 @@ export function DailySummary() {
             </Card>
         </div>
     );
-
-    
