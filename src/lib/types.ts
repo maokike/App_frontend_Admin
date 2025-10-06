@@ -30,13 +30,14 @@ export type PaymentMethod = 'cash' | 'card';
 
 export type Sale = {
   id: string;
-  productId: string;
-  quantity: number;
+  products: { productId: string; quantity: number }[];
   total: number;
   paymentMethod: PaymentMethod;
   date: Timestamp | Date;
   localId?: string;
+  paymentProofUrl?: string; // Optional URL for the payment proof image
 };
+
 
 export type Local = {
     id: string;
@@ -45,3 +46,5 @@ export type Local = {
     phone?: string;
     userId: string;
 };
+
+    

@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Landmark, PlusCircle, Trash2 } from "lucide-react";
-import { collection, getDocs, addDoc, Timestamp, writeBatch, doc, runTransaction, DocumentReference, DocumentData } from "firebase/firestore";
+import { CreditCard, Landmark, PlusCircle, Trash2, FileImage } from "lucide-react";
+import { collection, getDocs, addDoc, Timestamp, writeBatch, doc, getDoc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Product } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +26,15 @@ const saleItemSchema = z.object({
 const formSchema = z.object({
   products: z.array(saleItemSchema).min(1, "Please add at least one product."),
   paymentMethod: z.enum(["cash", "card"], { required_error: "Please select a payment method." }),
+  paymentProof: z.any().optional(),
+}).refine(data => {
+    if (data.paymentMethod === 'card') {
+        return data.paymentProof && data.paymentProof.length > 0;
+    }
+    return true;
+}, {
+    message: "El comprobante de pago es obligatorio para ventas con tarjeta.",
+    path: ["paymentProof"],
 });
 
 export function SalesForm() {
@@ -58,6 +67,8 @@ export function SalesForm() {
     control: form.control,
     name: "products",
   });
+  
+  const paymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
     const subscription = form.watch((value) => {
@@ -86,6 +97,12 @@ export function SalesForm() {
         toast({ title: "Error de asignación", description: "Este usuario no está asignado a ningún local. Contacte a un administrador.", variant: "destructive" });
         return;
     }
+    
+    // TODO: Implement image upload to Firebase Storage and get URL
+    if (values.paymentMethod === 'card' && values.paymentProof) {
+      console.log("Comprobante a subir:", values.paymentProof[0]);
+      // const imageUrl = await uploadImage(values.paymentProof[0]);
+    }
 
     const batch = writeBatch(db);
 
@@ -93,7 +110,6 @@ export function SalesForm() {
         const productsToUpdate: { ref: DocumentReference, newStock: number }[] = [];
         let insufficientStock = false;
 
-        // First, check for stock availability
         for (const item of values.products) {
             const productRef = doc(db, "products", item.productId);
             const productDoc = await getDoc(productRef);
@@ -113,16 +129,15 @@ export function SalesForm() {
                     variant: "destructive",
                 });
                 insufficientStock = true;
-                break; // Stop processing if any product is out of stock
+                break;
             }
             productsToUpdate.push({ ref: productRef, newStock });
         }
 
         if (insufficientStock) {
-            return; // Abort submission
+            return;
         }
 
-        // If all products have enough stock, proceed with the batch write
         productsToUpdate.forEach(({ ref, newStock }) => {
             batch.update(ref, { stock: newStock });
         });
@@ -133,6 +148,7 @@ export function SalesForm() {
             paymentMethod: values.paymentMethod,
             date: Timestamp.now(),
             localId: user.localId, 
+            // paymentProofUrl: imageUrl || null,
         };
 
         const salesCollectionRef = collection(db, "sales");
@@ -254,6 +270,28 @@ export function SalesForm() {
               </FormItem>
             )}
           />
+
+          {paymentMethod === 'card' && (
+            <FormField
+              control={form.control}
+              name="paymentProof"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileImage className="w-4 h-4" /> Comprobante de Pago
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => field.onChange(e.target.files)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
         
         <div className="flex flex-col gap-4">
@@ -273,3 +311,5 @@ export function SalesForm() {
     </Form>
   );
 }
+
+    
