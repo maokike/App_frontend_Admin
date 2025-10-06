@@ -41,10 +41,10 @@ export function DailySummary() {
 
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
         const startTimestamp = Timestamp.fromDate(startOfToday);
-        const endTimestamp = Timestamp.fromDate(startOfTomorrow);
+        const endTimestamp = Timestamp.fromDate(endOfToday);
 
         const salesCol = collection(db, "sales");
         
@@ -53,13 +53,13 @@ export function DailySummary() {
         if (role === 'local' && user.localId) {
              salesQuery = query(salesCol, 
                 where('date', '>=', startTimestamp), 
-                where('date', '<', endTimestamp),
+                where('date', '<=', endTimestamp),
                 where('localId', '==', user.localId)
              );
         } else if (role === 'admin') {
              salesQuery = query(salesCol, 
                 where('date', '>=', startTimestamp), 
-                where('date', '<', endTimestamp)
+                where('date', '<=', endTimestamp)
             );
         } else {
             setLoading(false);
@@ -207,4 +207,5 @@ export function DailySummary() {
             </Card>
         </div>
     );
-}
+
+    
