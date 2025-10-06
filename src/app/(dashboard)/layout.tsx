@@ -200,9 +200,6 @@ export default function DashboardLayout({
                 <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Cerrar sesión" className="sm:hidden">
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </SidebarFooter>
       </Sidebar>

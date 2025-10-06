@@ -12,7 +12,7 @@ interface DashboardHeaderProps {
   onRoleChange: (role: UserRole) => void;
   localName?: string;
   isAdmin: boolean;
-  onLogout?: () => void;
+  onLogout: () => void; 
 }
 
 export function DashboardHeader({ 
@@ -55,12 +55,10 @@ export function DashboardHeader({
             </Select>
           </div>
         )}
-         {onLogout && (
-          <Button variant="outline" onClick={onLogout} className="hidden sm:inline-flex">
+         <Button variant="outline" onClick={onLogout} className="hidden sm:inline-flex">
             <LogOut className="mr-2 h-4 w-4" />
             Cerrar Sesión
           </Button>
-        )}
       </div>
     </div>
   );
