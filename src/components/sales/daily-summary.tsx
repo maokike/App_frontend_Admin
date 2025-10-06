@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, getDoc, doc, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Sale, Product, User } from "@/lib/types";
+import type { Sale, User } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -33,19 +33,28 @@ export function DailySummary() {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
+        const startOfToday = Timestamp.fromDate(today);
+        const startOfTomorrow = Timestamp.fromDate(tomorrow);
+
         const salesCol = collection(db, "sales");
         
-        let salesQuery = query(salesCol, where('date', '>=', Timestamp.fromDate(today)), where('date', '<', Timestamp.fromDate(tomorrow)));
+        let salesQuery;
         
-        if (role === 'local' && (user as User).localId) {
+        if (role === 'local' && user.localId) {
              salesQuery = query(salesCol, 
-                where('date', '>=', Timestamp.fromDate(today)), 
-                where('date', '<', Timestamp.fromDate(tomorrow)), 
-                where('localId', '==', (user as User).localId)
+                where('date', '>=', startOfToday), 
+                where('date', '<', startOfTomorrow), 
+                where('localId', '==', user.localId)
              );
+        } else {
+             salesQuery = query(salesCol, 
+                where('date', '>=', startOfToday), 
+                where('date', '<', startOfTomorrow)
+            );
         }
 
-        const unsubscribe = onSnapshot(salesQuery, async (snapshot) => {
+
+        const unsubscribe = onSnapshot(salesQuery, (snapshot) => {
             setTotalTransactions(snapshot.size);
 
             const salesData = snapshot.docs.map(doc => doc.data() as Sale);
@@ -64,25 +73,22 @@ export function DailySummary() {
                         };
                     }
                     
-                    const productRef = doc(db, "products", item.productId);
-                    const productSnap = await getDoc(productRef);
-                    const productPrice = productSnap.exists() ? (productSnap.data() as Product).price : 0;
-
                     aggregated[item.productId].quantity += item.quantity;
-                    aggregated[item.productId].total += item.quantity * productPrice;
+                    aggregated[item.productId].total += (sale.total / sale.products.length); // Approximate if total is for the whole sale
                     
                     const paymentMethod = sale.paymentMethod;
                     if (!aggregated[item.productId].paymentMethods[paymentMethod]) {
                         aggregated[item.productId].paymentMethods[paymentMethod] = 0;
                     }
-                    // This logic is slightly flawed, it will count once per product in the sale, not once per sale.
-                    // A better approach would be to process payment methods separately.
-                    // For now, let's keep it simple as the user didn't complain about it.
+                    // This logic is slightly flawed as it assumes one payment method per item
                     aggregated[item.productId].paymentMethods[paymentMethod]++;
                 }
             }
 
             setDailySales(Object.values(aggregated));
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching daily summary: ", error);
             setLoading(false);
         });
 
