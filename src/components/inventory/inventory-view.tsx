@@ -13,12 +13,15 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { EditProductForm } from "@/components/product/edit-product-form";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "../ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 
 export function InventoryView() {
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const { role } = useAuth();
+    const isAdmin = role === 'admin';
 
     useEffect(() => {
         const productsCollection = collection(db, "products");
@@ -35,9 +38,9 @@ export function InventoryView() {
         const productRef = doc(db, "products", updatedProduct.id);
         await updateDoc(productRef, {
             name: updatedProduct.name,
-            price: updatedProduct.price,
+            price: Number(updatedProduct.price),
             description: updatedProduct.description,
-            stock: updatedProduct.stock,
+            stock: Number(updatedProduct.stock),
         });
         setSelectedProduct(null);
         router.push('/inventory'); 
@@ -68,7 +71,7 @@ export function InventoryView() {
                                     <TableHead className="text-center">Precio</TableHead>
                                     <TableHead className="text-center">Stock Actual</TableHead>
                                     <TableHead className="w-[20%] text-center">Nivel de Stock</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
+                                    {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -79,7 +82,7 @@ export function InventoryView() {
                                             <TableCell><Skeleton className="h-5 w-1/2 mx-auto" /></TableCell>
                                             <TableCell><Skeleton className="h-5 w-1/4 mx-auto" /></TableCell>
                                             <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                                            {isAdmin && <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>}
                                         </TableRow>
                                     ))
                                 ) : (
@@ -93,19 +96,21 @@ export function InventoryView() {
                                             <TableCell>
                                                 <Progress value={stockLevel} className="w-full" />
                                             </TableCell>
-                                            <TableCell className="text-right">
-                                                <SheetTrigger asChild>
-                                                    <Button variant="ghost" size="icon" onClick={() => setSelectedProduct(product)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                </SheetTrigger>
-                                            </TableCell>
+                                            {isAdmin && (
+                                                <TableCell className="text-right">
+                                                    <SheetTrigger asChild>
+                                                        <Button variant="ghost" size="icon" onClick={() => setSelectedProduct(product)}>
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    </SheetTrigger>
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     )})
                                 )}
                             </TableBody>
                         </Table>
-                         {selectedProduct && (
+                         {isAdmin && selectedProduct && (
                             <SheetContent>
                                 <SheetHeader>
                                     <SheetTitle>Editar Producto</SheetTitle>
