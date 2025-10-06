@@ -51,7 +51,7 @@ export default function NewLocalPage() {
                 title: "Local Creado",
                 description: `El local ${newLocalData.name} ha sido añadido y asignado.`,
             });
-            router.push('/');
+            router.push('/admin-dashboard');
         } catch (error) {
             console.error("Error creating local: ", error);
             toast({ title: "Error", description: "No se pudo crear el local", variant: "destructive" });
@@ -87,7 +87,7 @@ export default function NewLocalPage() {
                 title: "Local Actualizado",
                 description: `El local ${updatedLocal.name} ha sido actualizado.`,
             });
-            router.push('/');
+            router.push('/admin-dashboard');
        } catch (error) {
             console.error("Error updating local: ", error);
             toast({ title: "Error", description: "No se pudo actualizar el local", variant: "destructive" });
@@ -116,7 +116,7 @@ export default function NewLocalPage() {
                 description: "El local ha sido eliminado correctamente.",
                 variant: "destructive",
             });
-            router.push('/');
+            router.push('/admin-dashboard');
         } catch (error) {
             console.error("Error deleting local: ", error);
             toast({ title: "Error", description: "No se pudo eliminar el local", variant: "destructive" });
