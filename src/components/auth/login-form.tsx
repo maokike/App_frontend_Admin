@@ -41,7 +41,7 @@ export function LoginForm() {
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
-      router.push('/');
+      router.replace('/'); // Redirect to the main page which will handle dashboard routing
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -79,7 +79,7 @@ export function LoginForm() {
                 description: "¡Bienvenido de nuevo!",
             });
         }
-        router.push('/');
+        router.replace('/'); // Redirect to the main page which will handle dashboard routing
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",
@@ -141,5 +141,3 @@ export function LoginForm() {
     </Card>
   );
 }
-
-    

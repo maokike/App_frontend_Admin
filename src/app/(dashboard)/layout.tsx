@@ -52,7 +52,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/");
+      router.replace("/login");
     }
     if (role) {
       setCurrentViewRole(role);
@@ -66,7 +66,7 @@ export default function DashboardLayout({
         title: "Sesión Cerrada",
         description: "Has cerrado sesión correctamente.",
       });
-      router.push('/');
+      router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({

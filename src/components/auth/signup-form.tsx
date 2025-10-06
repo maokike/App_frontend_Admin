@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -51,7 +52,7 @@ export function SignupForm() {
         title: "Account Created!",
         description: "Your local user account has been successfully created.",
       });
-      router.push('/');
+      router.push('/login');
     } catch (error: any) {
         toast({
             title: "Signup Failed",
@@ -87,7 +88,7 @@ export function SignupForm() {
             });
         }
         
-        router.push('/');
+        router.push('/'); // Redirect to main page for routing logic
     } catch (error: any) {
         toast({
             title: "Google Sign-In Failed",

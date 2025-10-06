@@ -1,3 +1,4 @@
+
 import { SignupForm } from "@/components/auth/signup-form";
 import { Button } from "@/components/ui/button";
 import { DollarSign, ArrowLeft } from "lucide-react";
@@ -16,12 +17,12 @@ export default function SignupPage() {
       <SignupForm />
         <p className="mt-4 text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/" className="font-semibold text-primary hover:underline">
+            <Link href="/login" className="font-semibold text-primary hover:underline">
             Login
             </Link>
         </p>
         <Button variant="link" className="mt-8" asChild>
-            <Link href="/">
+            <Link href="/login">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Login
             </Link>
