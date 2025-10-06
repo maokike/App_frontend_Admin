@@ -55,7 +55,7 @@ export function NewLocalForm({ onLocalAdded }: NewLocalFormProps) {
   function onSubmit(values: z.infer<typeof formSchema>) {
     onLocalAdded(values);
     form.reset();
-    router.push('/login');
+    router.push('/');
   }
 
   return (
@@ -127,7 +127,7 @@ export function NewLocalForm({ onLocalAdded }: NewLocalFormProps) {
             />
         </div>
         <div className="flex items-center gap-4">
-            <Button variant="outline" type="button" onClick={() => router.push('/login')}>
+            <Button variant="outline" type="button" onClick={() => router.push('/')}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver
             </Button>

@@ -138,7 +138,7 @@ export function SalesForm() {
             paymentMethod: "card",
         });
         setTotal(0);
-        router.push('/login');
+        router.push('/');
 
     } catch (error: any) {
         toast({
