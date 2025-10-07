@@ -22,12 +22,7 @@ import {
 import {
   DollarSign,
   Home,
-  LogOut,
   Newspaper,
-  Package,
-  ShoppingCart,
-  Store,
-  Users,
   Warehouse,
   PlusCircle,
 } from "lucide-react";
@@ -37,7 +32,6 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/lib/types";
 
 export default function DashboardLayout({
@@ -159,29 +153,12 @@ export default function DashboardLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {isAdmin && (
+            {isAdmin && currentViewRole === 'admin' && (
               <SidebarGroup>
                 <SidebarGroupLabel>Admin</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-product">
-                        <Package />
-                        <span>Productos</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-local">
-                        <Store />
-                        <span>Locales</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton href="/new-customer">
-                        <Users />
-                        <span>Clientes</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    {/* Items moved to admin-dashboard */}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
