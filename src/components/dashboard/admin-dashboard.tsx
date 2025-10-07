@@ -3,9 +3,9 @@
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { CircleDollarSign, ShoppingCart, Store, Warehouse, Package, Calendar, History } from "lucide-react";
+import { CircleDollarSign, ShoppingCart, Store, Calendar, History } from "lucide-react";
 import { useEffect, useState } from "react";
-import { collection, getDocs, onSnapshot, query, where, Timestamp, orderBy } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query, where, Timestamp, orderBy, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "../ui/button";
 import Link from "next/link";
@@ -17,9 +17,31 @@ interface MonthlySale {
   total: number;
 }
 
+interface SaleProduct {
+  producto?: string;
+  productName?: string;
+  quantity?: number;
+  total?: number;
+  price?: number;
+}
+
+interface FirebaseSale extends DocumentData {
+  id: string;
+  ventaId?: string;
+  date?: Timestamp;
+  tipo_pago?: string;
+  paymentMethod?: string;
+  producto?: string;
+  productName?: string;
+  quantity?: number;
+  total?: number;
+  products?: SaleProduct[];
+  localId?: string;
+}
+
 interface GroupedSale {
   ventaId: string;
-  date: Timestamp;
+  date: Timestamp | null;
   tipo_pago: string;
   productos: Array<{
     producto: string;
@@ -30,7 +52,7 @@ interface GroupedSale {
   localId?: string;
 }
 
-export function AdminDashboard() { // ✅ Quitar onLogout de los props
+export function AdminDashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
   const [totalLocals, setTotalLocals] = useState(0);
@@ -48,11 +70,11 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
       const salesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      } as FirebaseSale));
 
       console.log("📊 Ventas encontradas:", salesData.length);
 
-      // Agrupar ventas correctamente
+      // Agrupar ventas
       const groupedSalesMap: { [key: string]: GroupedSale } = {};
       const today = new Date();
       const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
@@ -61,14 +83,13 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
       let todayRevenue = 0;
       const todaySalesSet = new Set();
 
-      salesData.forEach(sale => {
-        // Determinar ventaId para agrupación
+      salesData.forEach((sale: FirebaseSale) => {
         const ventaId = sale.ventaId || sale.id;
         
         if (!groupedSalesMap[ventaId]) {
           groupedSalesMap[ventaId] = {
             ventaId: ventaId,
-            date: sale.date,
+            date: sale.date || null,
             tipo_pago: sale.tipo_pago || sale.paymentMethod || 'efectivo',
             productos: [],
             totalVenta: 0,
@@ -76,25 +97,32 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
           };
         }
 
-        // Agregar productos según la estructura
+        // Agregar productos
         if (sale.products && Array.isArray(sale.products)) {
-          // Estructura con array de productos
-          sale.products.forEach(prod => {
+          sale.products.forEach((prod: SaleProduct) => {
+            const productName = prod.producto || prod.productName || 'Producto';
+            const quantity = prod.quantity || 1;
+            const total = prod.total || 0;
+            
             groupedSalesMap[ventaId].productos.push({
-              producto: prod.producto || prod.productName || 'Producto',
-              quantity: prod.quantity || 1,
-              total: prod.total || 0
+              producto: productName,
+              quantity: quantity,
+              total: total
             });
-            groupedSalesMap[ventaId].totalVenta += prod.total || 0;
+            groupedSalesMap[ventaId].totalVenta += total;
           });
         } else {
-          // Estructura de documento individual
+          // Si no hay array de products, usar los campos directos
+          const productName = sale.producto || sale.productName || 'Producto';
+          const quantity = sale.quantity || 1;
+          const total = sale.total || 0;
+          
           groupedSalesMap[ventaId].productos.push({
-            producto: sale.producto || sale.productName || 'Producto',
-            quantity: sale.quantity || 1,
-            total: sale.total || 0
+            producto: productName,
+            quantity: quantity,
+            total: total
           });
-          groupedSalesMap[ventaId].totalVenta += sale.total || 0;
+          groupedSalesMap[ventaId].totalVenta += total;
         }
 
         // Verificar si es venta de hoy
@@ -109,11 +137,7 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
 
       const groupedSalesArray = Object.values(groupedSalesMap);
       
-      console.log("📦 Ventas agrupadas:", groupedSalesArray.length);
-      console.log("💰 Ingresos hoy:", todayRevenue);
-      console.log("🛒 Ventas hoy:", todaySalesSet.size);
-
-      // Calcular estadísticas generales
+      // Calcular estadísticas
       const totalRevenue = groupedSalesArray.reduce((sum, venta) => sum + venta.totalVenta, 0);
       const totalSalesCount = groupedSalesArray.length;
 
@@ -123,14 +147,12 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
       setTodaySales(todaySalesSet.size);
       setRecentSales(groupedSalesArray.slice(0, 5));
 
-      // Calcular ventas mensuales del año actual
+      // Calcular ventas mensuales
       const monthlyTotals: { [key: string]: number } = {};
       
-      groupedSalesArray.forEach(venta => {
+      groupedSalesArray.forEach((venta: GroupedSale) => {
         if (venta.date && venta.date.toDate) {
           const saleDate = venta.date.toDate();
-          
-          // Solo ventas del año actual
           if (saleDate.getFullYear() === currentYear) {
             const monthName = saleDate.toLocaleString('es-ES', { month: 'short' });
             
@@ -149,8 +171,6 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
         total: monthlyTotals[monthName] || 0,
       }));
 
-      console.log("📈 Ventas mensuales:", completeMonthlySales);
-      
       setMonthlySales(completeMonthlySales);
       setLoading(false);
     });
@@ -159,7 +179,6 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
     const usersCol = collection(db, "Usuarios");
     const localsQuery = query(usersCol, where("rol", "==", "local"));
     getDocs(localsQuery).then(snapshot => {
-      console.log("🏪 Locales encontrados:", snapshot.size);
       setTotalLocals(snapshot.size);
     });
 
@@ -168,14 +187,12 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
 
   const formatNumber = (number: number) => {
     if (number === 0) return '0';
-    const integerNumber = Math.round(number);
-    return integerNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return Math.round(number).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
-  const formatTimestamp = (timestamp: Timestamp) => {
+  const formatTimestamp = (timestamp: Timestamp | null) => {
     try {
       if (!timestamp) return 'Fecha no disponible';
-      
       if (timestamp.toDate) {
         const date = timestamp.toDate();
         return date.toLocaleString('es-ES', { 
@@ -185,7 +202,6 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
           month: '2-digit'
         });
       }
-      
       return 'Formato inválido';
     } catch (error) {
       return 'Error en fecha';
@@ -203,68 +219,66 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
   };
 
   return (
-    <div className="grid gap-8">
-      {/* ✅ CONTENIDO PRINCIPAL SIN SIDEBAR DUPLICADO */}
-
+    <div className="space-y-8">
       {/* Estadísticas Principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-pink-200" />
+            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? (
-              <Skeleton className="h-8 w-3/4 bg-pink-400" />
+              <Skeleton className="h-8 w-3/4" />
             ) : (
               <div className="text-2xl font-bold">${formatNumber(totalRevenue)}</div>
             )}
-            <p className="text-xs text-pink-200">Todos los locales</p>
+            <p className="text-xs text-muted-foreground">Todos los locales</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Ventas</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-fuchsia-200" />
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? (
-              <Skeleton className="h-8 w-1/2 bg-fuchsia-400" />
+              <Skeleton className="h-8 w-1/2" />
             ) : (
               <div className="text-2xl font-bold">{formatNumber(totalSales)}</div>
             )}
-            <p className="text-xs text-fuchsia-200">Transacciones totales</p>
+            <p className="text-xs text-muted-foreground">Transacciones totales</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Locales Activos</CardTitle>
-            <Store className="h-4 w-4 text-purple-200" />
+            <Store className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? (
-              <Skeleton className="h-8 w-1/4 bg-purple-400" />
+              <Skeleton className="h-8 w-1/4" />
             ) : (
               <div className="text-2xl font-bold">{formatNumber(totalLocals)}</div>
             )}
-            <p className="text-xs text-purple-200">Cuentas de locales</p>
+            <p className="text-xs text-muted-foreground">Cuentas de locales</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Hoy</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-200" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? (
-              <Skeleton className="h-8 w-3/4 bg-blue-400" />
+              <Skeleton className="h-8 w-3/4" />
             ) : (
               <>
                 <div className="text-2xl font-bold">${formatNumber(todayRevenue)}</div>
-                <p className="text-xs text-blue-200">{todaySales} ventas hoy</p>
+                <p className="text-xs text-muted-foreground">{todaySales} ventas hoy</p>
               </>
             )}
           </CardContent>
@@ -275,7 +289,7 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
         {/* Gráfico de Ventas Mensuales */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Resumen de Ventas</CardTitle>
+            <CardTitle className="text-lg font-semibold">Resumen de Ventas</CardTitle>
             <CardDescription>Ventas mensuales del año actual</CardDescription>
           </CardHeader>
           <CardContent>
@@ -290,10 +304,7 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
                   color: "hsl(var(--primary))",
                 },
               }} className="h-[250px] w-full">
-                <BarChart 
-                  data={monthlySales} 
-                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                >
+                <BarChart data={monthlySales}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis 
                     dataKey="month" 
@@ -307,35 +318,17 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
                     axisLine={false} 
                     tickMargin={8} 
                     tickFormatter={(value) => `$${formatNumber(value)}`}
-                    width={60}
                   />
                   <ChartTooltip
-                    cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg">
-                            <p className="font-semibold">{`${payload[0].payload.month.charAt(0).toUpperCase() + payload[0].payload.month.slice(1)}`}</p>
-                            <p className="text-green-600 font-bold">{`$${formatNumber(payload[0].value as number)}`}</p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
+                    content={<ChartTooltipContent />}
                   />
-                  <Bar 
-                    dataKey="total" 
-                    fill="hsl(var(--primary))" 
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  />
+                  <Bar dataKey="total" fill="var(--color-total)" radius={4} />
                 </BarChart>
               </ChartContainer>
             ) : (
-              <div className="h-[250px] flex flex-col items-center justify-center text-gray-500">
+              <div className="h-[250px] flex flex-col items-center justify-center text-muted-foreground">
                 <ShoppingCart className="h-12 w-12 mb-3 opacity-50" />
-                <p>No hay datos de ventas para el año actual</p>
-                <p className="text-sm">Las ventas aparecerán aquí cuando se registren</p>
+                <p>No hay datos de ventas</p>
               </div>
             )}
           </CardContent>
@@ -344,13 +337,13 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
         {/* Ventas Recientes */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Ventas Recientes</CardTitle>
+            <CardTitle className="text-lg font-semibold">Ventas Recientes</CardTitle>
             <CardDescription>Últimas transacciones registradas</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
+                {Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
@@ -368,7 +361,7 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
                         <p className="font-medium text-sm">
                           Venta {formatTimestamp(venta.date)}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {venta.productos.length} productos
                         </p>
                       </div>
@@ -385,7 +378,7 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No hay ventas recientes</p>
               </div>
@@ -394,6 +387,7 @@ export function AdminDashboard() { // ✅ Quitar onLogout de los props
             {!loading && recentSales.length > 0 && (
               <Button variant="outline" className="w-full mt-4" asChild>
                 <Link href="/sales-history">
+                  <History className="mr-2 h-4 w-4" />
                   Ver Historial Completo
                 </Link>
               </Button>
