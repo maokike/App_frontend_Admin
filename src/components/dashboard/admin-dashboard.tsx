@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface MonthlySale {
   month: string;
   total: number;
-  ventas: number;
 }
 
 interface AdminDashboardProps {
@@ -49,118 +48,86 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   useEffect(() => {
     const salesCol = collection(db, "sales");
-    
-    // Query para todas las ventas ordenadas por fecha
     const salesQuery = query(salesCol, orderBy('date', 'desc'));
     
     const unsubscribe = onSnapshot(salesQuery, (snapshot) => {
       const salesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      } as Sale));
 
-      console.log("📊 Ventas encontradas:", salesData.length);
-
-      // Agrupar ventas igual que en la app móvil
+      // --- Group sales for recent sales and counts ---
       const groupedSalesMap: { [key: string]: GroupedSale } = {};
-      const today = new Date();
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-      
-      let todayRevenue = 0;
-      let todaySalesCount = 0;
-
       salesData.forEach(sale => {
         const ventaId = sale.saleId || sale.id;
-        
         if (!groupedSalesMap[ventaId]) {
           groupedSalesMap[ventaId] = {
             ventaId: ventaId,
-            date: sale.date,
-            tipo_pago: sale.tipo_pago || sale.paymentMethod || 'efectivo',
+            date: sale.date as Timestamp,
+            tipo_pago: sale.paymentMethod || 'efectivo',
             productos: [],
-            totalVenta: 0,
+            totalVenta: sale.total,
             localId: sale.localId
           };
         }
-        
-        // Agregar producto individual
-        if (sale.products && Array.isArray(sale.products)) {
-          sale.products.forEach(prod => {
+        (sale.products || []).forEach(prod => {
             groupedSalesMap[ventaId].productos.push({
-              producto: prod.producto || prod.productName || 'Producto',
-              quantity: prod.quantity || 1,
-              total: prod.total || 0
+                producto: prod.productName,
+                quantity: prod.quantity,
+                total: prod.total || 0,
             });
-            groupedSalesMap[ventaId].totalVenta += prod.total || 0;
-          });
-        } else if (sale.producto) {
-          groupedSalesMap[ventaId].productos.push({
-            producto: sale.producto || sale.productName || 'Producto',
-            quantity: sale.quantity || 1,
-            total: sale.total || 0
-          });
-          groupedSalesMap[ventaId].totalVenta += sale.total || 0;
-        }
-
-        // Calcular estadísticas de hoy
-        if (sale.date && sale.date.toDate) {
-          const saleDate = sale.date.toDate();
-          if (saleDate >= startOfToday) {
-            todayRevenue += sale.total || 0;
-            // Solo contar una vez por venta agrupada
-            if (ventaId === (sale.ventaId || sale.id)) {
-              todaySalesCount++;
-            }
-          }
-        }
+        });
       });
-      
       const groupedSalesArray = Object.values(groupedSalesMap);
+
+      // --- Calculate stats from ALL salesData (not grouped) ---
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+      let currentTodayRevenue = 0;
+      let currentTodaySales = new Set();
       
-      // Estadísticas generales
-      const totalRevenue = groupedSalesArray.reduce((sum, venta) => sum + venta.totalVenta, 0);
-      const totalSalesCount = groupedSalesArray.length;
-
-      setTotalRevenue(totalRevenue);
-      setTotalSales(totalSalesCount);
-      setTodayRevenue(todayRevenue);
-      setTodaySales(todaySalesCount);
-      setRecentSales(groupedSalesArray.slice(0, 5)); // Últimas 5 ventas
-
-      // Calcular ventas mensuales
-      const monthly = groupedSalesArray.reduce((acc, venta) => {
-        if (venta.date && venta.date.toDate) {
-          const date = venta.date.toDate();
-          const month = date.toLocaleString('es-ES', { month: 'short' });
-          const existing = acc.find(d => d.month === month);
-          if (existing) {
-            existing.total += venta.totalVenta;
-            existing.ventas += 1;
-          } else {
-            acc.push({ month, total: venta.totalVenta, ventas: 1 });
-          }
+      const monthlyTotals = salesData.reduce((acc, sale) => {
+        // Daily stats
+        const saleDate = (sale.date as Timestamp).toDate();
+        if (saleDate >= startOfToday) {
+          currentTodayRevenue += sale.total;
+          currentTodaySales.add(sale.saleId || sale.id);
         }
+
+        // Monthly stats
+        const month = saleDate.toLocaleString('es-ES', { month: 'short' });
+        if (!acc[month]) {
+          acc[month] = 0;
+        }
+        acc[month] += sale.total;
+        
         return acc;
-      }, [] as MonthlySale[]);
-      
-      // Ordenar meses y asegurar todos estén presentes
+      }, {} as { [key: string]: number });
+
+      // --- Update states ---
+      setTotalRevenue(groupedSalesArray.reduce((sum, venta) => sum + venta.totalVenta, 0));
+      setTotalSales(groupedSalesArray.length);
+      setTodayRevenue(currentTodayRevenue);
+      setTodaySales(currentTodaySales.size);
+      setRecentSales(groupedSalesArray.slice(0, 5));
+
+      // Format monthly sales for the chart
       const monthOrder = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-      const completeMonthlySales = monthOrder.map(monthName => {
-        const found = monthly.find(m => m.month.toLowerCase() === monthName);
-        return found || { month: monthName, total: 0, ventas: 0 };
-      });
+      const completeMonthlySales = monthOrder.map(monthName => ({
+        month: monthName,
+        total: monthlyTotals[monthName] || 0,
+      }));
       
       setMonthlySales(completeMonthlySales);
       setLoading(false);
     });
 
-    // Obtener total de locales
-    const usersCol = collection(db, "Usuarios");
-    const localsQuery = query(usersCol, where("rol", "==", "local"));
-    getDocs(localsQuery).then(snapshot => setTotalLocals(snapshot.size));
+    const localsCol = collection(db, "locals");
+    getDocs(localsCol).then(snapshot => setTotalLocals(snapshot.size));
 
     return () => unsubscribe();
   }, []);
+
 
   const formatNumber = (number: number) => {
     if (number === 0) return '0';
@@ -189,7 +156,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const getPaymentIcon = (tipoPago: string) => {
-    return tipoPago === 'efectivo' ? '💵' : '💳';
+    const method = tipoPago.toLowerCase();
+    return method === 'efectivo' || method === 'cash' ? '💵' : '💳';
   };
 
   return (
@@ -347,7 +315,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     />
                     <ChartTooltip
                       cursor={false}
-                      content={<ChartTooltipContent indicator="dot" />}
+                      content={<ChartTooltipContent indicator="dot" formatter={(value, name, item) => (`$${formatNumber(item.payload.total)}`)}/>}
                     />
                     <Bar dataKey="total" fill="var(--color-total)" radius={4} />
                   </BarChart>
@@ -375,7 +343,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <div key={venta.ventaId} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`p-2 rounded-full ${
-                          venta.tipo_pago === 'efectivo' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                          venta.tipo_pago.toLowerCase().includes('cash') || venta.tipo_pago.toLowerCase().includes('efectivo') ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                         }`}>
                           {getPaymentIcon(venta.tipo_pago)}
                         </div>
@@ -393,7 +361,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                           ${formatNumber(venta.totalVenta)}
                         </p>
                         <Badge variant="outline" className="text-xs capitalize">
-                          {venta.tipo_pago}
+                          {venta.tipo_pago === 'cash' ? 'Efectivo' : 'Tarjeta'}
                         </Badge>
                       </div>
                     </div>
