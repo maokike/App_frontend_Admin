@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -25,6 +24,7 @@ import {
   Newspaper,
   Warehouse,
   PlusCircle,
+  LogOut // ✅ AGREGAR ESTA IMPORTACIÓN
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +33,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import type { UserRole } from "@/lib/types";
+import { Button } from "@/components/ui/button"; // ✅ AGREGAR ESTA IMPORTACIÓN
 
 export default function DashboardLayout({
   children,
@@ -167,6 +168,8 @@ export default function DashboardLayout({
         </SidebarContent>
         <SidebarFooter>
           <Separator className="my-2" />
+          
+          {/* Información del usuario */}
           <div className="flex items-center justify-between p-2">
             <div className="flex items-center gap-3">
               <Avatar>
@@ -177,6 +180,18 @@ export default function DashboardLayout({
                 <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
               </div>
             </div>
+          </div>
+
+          {/* ✅ BOTÓN DE CERRAR SESIÓN - AGREGADO AQUÍ */}
+          <div className="p-2">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Cerrar Sesión
+            </Button>
           </div>
         </SidebarFooter>
       </Sidebar>
