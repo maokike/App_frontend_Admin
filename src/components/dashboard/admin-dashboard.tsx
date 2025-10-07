@@ -7,12 +7,15 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { CircleDollarSign, LogOut, ShoppingCart, Users, Store, Warehouse, Package, Calendar, History } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, getDocs, onSnapshot, query, where, Timestamp, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import type { Sale } from "@/lib/types";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 interface MonthlySale {
   month: string;
@@ -45,6 +48,26 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [monthlySales, setMonthlySales] = useState<MonthlySale[]>([]);
   const [recentSales, setRecentSales] = useState<GroupedSale[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Sesión Cerrada",
+        description: "Has cerrado sesión correctamente.",
+      });
+      router.push('/login');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar la sesión.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const salesCol = collection(db, "sales");
@@ -54,80 +77,115 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       const salesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      } as Sale));
+      }));
 
-      // --- Group sales for recent sales and counts ---
+      console.log("📊 Ventas encontradas:", salesData.length);
+
+      // Agrupar ventas correctamente
       const groupedSalesMap: { [key: string]: GroupedSale } = {};
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+      const currentYear = today.getFullYear();
+
+      let todayRevenue = 0;
+      const todaySalesSet = new Set();
+      const monthlyTotals: { [key: string]: number } = {};
+
       salesData.forEach(sale => {
-        const ventaId = sale.saleId || sale.id;
+        // Determinar ventaId para agrupación de ventas recientes
+        const ventaId = sale.ventaId || sale.id;
+        
         if (!groupedSalesMap[ventaId]) {
           groupedSalesMap[ventaId] = {
             ventaId: ventaId,
-            date: sale.date as Timestamp,
-            tipo_pago: sale.paymentMethod || 'efectivo',
+            date: sale.date,
+            tipo_pago: sale.tipo_pago || sale.paymentMethod || 'efectivo',
             productos: [],
-            totalVenta: sale.total,
+            totalVenta: 0,
             localId: sale.localId
           };
         }
-        (sale.products || []).forEach(prod => {
-            groupedSalesMap[ventaId].productos.push({
-                producto: prod.productName,
-                quantity: prod.quantity,
-                total: prod.total || 0,
-            });
-        });
-      });
-      const groupedSalesArray = Object.values(groupedSalesMap);
 
-      // --- Calculate stats from ALL salesData (not grouped) ---
-      const today = new Date();
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-      let currentTodayRevenue = 0;
-      let currentTodaySales = new Set();
-      
-      const monthlyTotals = salesData.reduce((acc, sale) => {
-        // Daily stats
-        const saleDate = (sale.date as Timestamp).toDate();
-        if (saleDate >= startOfToday) {
-          currentTodayRevenue += sale.total;
-          currentTodaySales.add(sale.saleId || sale.id);
-        }
-
-        // Monthly stats
-        const month = saleDate.toLocaleString('es-ES', { month: 'short' });
-        if (!acc[month]) {
-          acc[month] = 0;
-        }
-        acc[month] += sale.total;
+        const saleTotal = sale.total || 0;
+        groupedSalesMap[ventaId].totalVenta = saleTotal;
         
-        return acc;
-      }, {} as { [key: string]: number });
+        // Agregar productos según la estructura
+        if (sale.products && Array.isArray(sale.products)) {
+          sale.products.forEach(prod => {
+            groupedSalesMap[ventaId].productos.push({
+              producto: prod.producto || prod.productName || 'Producto',
+              quantity: prod.quantity || 1,
+              total: prod.total || 0
+            });
+          });
+        } else {
+          groupedSalesMap[ventaId].productos.push({
+            producto: sale.producto || sale.productName || 'Producto',
+            quantity: sale.quantity || 1,
+            total: sale.total || 0
+          });
+        }
 
-      // --- Update states ---
-      setTotalRevenue(groupedSalesArray.reduce((sum, venta) => sum + venta.totalVenta, 0));
-      setTotalSales(groupedSalesArray.length);
-      setTodayRevenue(currentTodayRevenue);
-      setTodaySales(currentTodaySales.size);
+        // Cálculos para estadísticas
+        if (sale.date && sale.date.toDate) {
+          const saleDate = sale.date.toDate();
+          
+          // Ventas de hoy
+          if (saleDate >= startOfToday) {
+            todayRevenue += saleTotal;
+            todaySalesSet.add(ventaId);
+          }
+
+          // Ventas mensuales del año actual
+          if (saleDate.getFullYear() === currentYear) {
+            const monthName = saleDate.toLocaleString('es-ES', { month: 'short' });
+            if (!monthlyTotals[monthName]) {
+              monthlyTotals[monthName] = 0;
+            }
+            monthlyTotals[monthName] += saleTotal;
+          }
+        }
+      });
+
+      const groupedSalesArray = Object.values(groupedSalesMap);
+      
+      console.log("📦 Ventas agrupadas:", groupedSalesArray.length);
+      console.log("💰 Ingresos hoy:", todayRevenue);
+      console.log("🛒 Ventas hoy:", todaySalesSet.size);
+
+      // Calcular estadísticas generales
+      const totalRevenue = groupedSalesArray.reduce((sum, venta) => sum + venta.totalVenta, 0);
+      const totalSalesCount = groupedSalesArray.length;
+
+      setTotalRevenue(totalRevenue);
+      setTotalSales(totalSalesCount);
+      setTodayRevenue(todayRevenue);
+      setTodaySales(todaySalesSet.size);
       setRecentSales(groupedSalesArray.slice(0, 5));
 
-      // Format monthly sales for the chart
+      // Crear array completo de meses para el gráfico
       const monthOrder = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
       const completeMonthlySales = monthOrder.map(monthName => ({
         month: monthName,
         total: monthlyTotals[monthName] || 0,
       }));
+
+      console.log("📈 Ventas mensuales:", completeMonthlySales);
       
       setMonthlySales(completeMonthlySales);
       setLoading(false);
     });
 
-    const localsCol = collection(db, "locals");
-    getDocs(localsCol).then(snapshot => setTotalLocals(snapshot.size));
+    // Obtener total de locales
+    const usersCol = collection(db, "Usuarios");
+    const localsQuery = query(usersCol, where("rol", "==", "local"));
+    getDocs(localsQuery).then(snapshot => {
+      console.log("🏪 Locales encontrados:", snapshot.size);
+      setTotalLocals(snapshot.size);
+    });
 
     return () => unsubscribe();
   }, []);
-
 
   const formatNumber = (number: number) => {
     if (number === 0) return '0';
@@ -156,8 +214,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const getPaymentIcon = (tipoPago: string) => {
-    const method = tipoPago.toLowerCase();
+    const method = tipoPago?.toLowerCase();
     return method === 'efectivo' || method === 'cash' ? '💵' : '💳';
+  };
+
+  const getPaymentText = (tipoPago: string) => {
+    const method = tipoPago?.toLowerCase();
+    return method === 'efectivo' || method === 'cash' ? 'Efectivo' : 'Transferencia';
   };
 
   return (
@@ -188,7 +251,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 Gestión de Productos
               </Link>
             </Button>
-             <Button variant="outline" className="justify-start" asChild>
+            <Button variant="outline" className="justify-start" asChild>
               <Link href="/sales-history">
                 <History className="mr-2 h-4 w-4" />
                 Historial de Ventas
@@ -197,19 +260,18 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           </CardContent>
         </Card>
         
-        {onLogout && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Sesión</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full" onClick={onLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {/* Botón de Cerrar Sesión */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sesión</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full" onClick={onLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Cerrar Sesión
+            </Button>
+          </CardContent>
+        </Card>
       </aside>
 
       {/* Main Content */}
@@ -280,7 +342,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         </div>
 
         <div className="grid gap-8 md:grid-cols-2">
-          {/* Gráfico de Ventas Mensuales */}
+          {/* Gráfico de Ventas Mensuales CORREGIDO */}
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Resumen de Ventas</CardTitle>
@@ -291,14 +353,17 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="h-[250px] flex items-center justify-center">
                   <Skeleton className="h-full w-full" />
                 </div>
-              ) : (
+              ) : monthlySales.some(sale => sale.total > 0) ? (
                 <ChartContainer config={{
                   total: {
                     label: "Total",
                     color: "hsl(var(--primary))",
                   },
                 }} className="h-[250px] w-full">
-                  <BarChart data={monthlySales} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                  <BarChart 
+                    data={monthlySales} 
+                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis 
                       dataKey="month" 
@@ -311,15 +376,37 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       tickLine={false} 
                       axisLine={false} 
                       tickMargin={8} 
-                      tickFormatter={(value) => `$${formatNumber(value)}`} 
+                      tickFormatter={(value) => `$${formatNumber(value)}`}
+                      width={60}
                     />
                     <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent indicator="dot" formatter={(value, name, item) => (`$${formatNumber(item.payload.total)}`)}/>}
+                      cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-3 border rounded-lg shadow-lg">
+                              <p className="font-semibold">{`${payload[0].payload.month.charAt(0).toUpperCase() + payload[0].payload.month.slice(1)}`}</p>
+                              <p className="text-green-600 font-bold">{`$${formatNumber(payload[0].value as number)}`}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
-                    <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+                    <Bar 
+                      dataKey="total" 
+                      fill="hsl(var(--primary))" 
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={40}
+                    />
                   </BarChart>
                 </ChartContainer>
+              ) : (
+                <div className="h-[250px] flex flex-col items-center justify-center text-gray-500">
+                  <ShoppingCart className="h-12 w-12 mb-3 opacity-50" />
+                  <p>No hay datos de ventas para el año actual</p>
+                  <p className="text-sm">Las ventas aparecerán aquí cuando se registren</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -343,7 +430,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <div key={venta.ventaId} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`p-2 rounded-full ${
-                          venta.tipo_pago.toLowerCase().includes('cash') || venta.tipo_pago.toLowerCase().includes('efectivo') ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                          getPaymentIcon(venta.tipo_pago) === '💵' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                         }`}>
                           {getPaymentIcon(venta.tipo_pago)}
                         </div>
@@ -361,7 +448,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                           ${formatNumber(venta.totalVenta)}
                         </p>
                         <Badge variant="outline" className="text-xs capitalize">
-                          {venta.tipo_pago === 'cash' ? 'Efectivo' : 'Tarjeta'}
+                          {getPaymentText(venta.tipo_pago)}
                         </Badge>
                       </div>
                     </div>
@@ -388,5 +475,3 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     </div>
   );
 }
-
-    
